@@ -94,15 +94,18 @@ export default function Settings() {
               </TouchableOpacity>
             ))}
           </View>
-          <Sub style={{ marginTop: 8 }}>Azan sound</Sub>
+          <Sub style={{ marginTop: 8 }}>Alert sound</Sub>
           <Seg
             options={[
-              { v: 'azan1', label: 'Azan 1' },
-              { v: 'azan2', label: 'Azan 2' },
+              { v: 'default', label: 'Default alert' },
               { v: 'silent', label: 'Silent (vibration)' },
             ]}
-            value={settings.azanSound} onPick={v => update({ azanSound: v })}
+            value={settings.azanSound === 'silent' ? 'silent' : 'default'}
+            onPick={v => update({ azanSound: v })}
           />
+          <Sub style={{ marginTop: 6 }}>
+            Custom azan audio files can be added in a later update — for now alerts use the phone's default notification sound.
+          </Sub>
         </Card>
 
         <Card>
@@ -112,7 +115,7 @@ export default function Settings() {
             alerts to save battery. Do this once:
           </Sub>
           <Sub style={{ marginTop: 8 }}>
-            {'1. Settings → Apps → Noor → Battery → "Unrestricted" (or "Don't optimize").\n'}
+            {'1. Settings → Apps → Noor → Battery → "Unrestricted" (or "Don\'t optimize").\n'}
             {'2. Turn OFF any "battery saver" restriction for Noor.\n'}
             {'3. On Xiaomi: also enable "Autostart" for Noor.\n'}
             {'4. Keep notifications allowed for Noor in system settings.'}

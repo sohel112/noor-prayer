@@ -28,11 +28,27 @@ export async function setupNotificationCategories(): Promise<void> {
   try {
     await Notifications.setNotificationCategoryAsync('prayer-azan', [
       { identifier: 'PLAY_AZAN', buttonTitle: '🔊 Play azan', options: { opensAppToForeground: true } },
-      { identifier: 'DISMISS', buttonTitle: 'Dismiss', options: { opensAppToForeground: false } },
     ]);
-  } catch {
-    // categories unsupported — notifications still work without actions
-  }
+    // Android: create a dedicated channel with the custom azan sound.
+    // Channel sound is immutable once created — use a versioned ID so
+    // sound changes take effect on update.
+    if (Platform.OS === 'android') {
+      const channelId = 'prayer-azan-v2';
+      // Delete old channel if it exists (to pick up sound changes).
+      try {
+        await Notifications.deleteNotificationChannelAsync('prayer-azan');
+        await Notifications.deleteNotificationChannelAsync('prayer-azan-v1');
+      } catch { /* channel may not exist yet */ }
+      await Notifications.setNotificationChannelAsync(channelId, {
+        name: 'Prayer Azan',
+        importance: Notifications.AndroidImportance.MAX,
+        sound: 'azan', // res/raw/azan.ogg (no extension)
+        vibrationPattern: [0, 500, 200, 500],
+        enableVibrate: true,
+        showBadge: false,
+      });
+    }
+  } catch { /* categories are best-effort */ }
 }
 
 /**
@@ -134,6 +150,8 @@ export async function reschedulePrayerNotifications(
                 : 'Tap to open Deen — azan will play.',
             sound: silent && !forceWake ? undefined : (settings.azanSound === 'azan2' ? 'azan2' : 'azan'),
             categoryIdentifier: 'prayer-azan',
+            // Android: use our custom channel with the azan sound baked in.
+            ...(Platform.OS === 'android' ? { android: { channelId: 'prayer-azan-v2' } } : {}),
             // Payload lets the app auto-play azan when the notification is tapped.
             data: { kind: 'prayer-azan', prayer: key, playAzan: !silent || forceWake, forceWake },
             priority: Notifications.AndroidNotificationPriority.MAX,

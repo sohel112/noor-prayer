@@ -29,17 +29,20 @@ export async function setupNotificationCategories(): Promise<void> {
     await Notifications.setNotificationCategoryAsync('prayer-azan', [
       { identifier: 'PLAY_AZAN', buttonTitle: '🔊 Play azan', options: { opensAppToForeground: true } },
     ]);
-    // Android: create a dedicated channel with the custom azan sound.
-    // Channel sound is immutable once created — use a versioned ID so
-    // sound changes take effect on update.
-    if (Platform.OS === 'android') {
-      const channelId = 'prayer-azan-v2';
-      // Delete old channel if it exists (to pick up sound changes).
-      try {
-        await Notifications.deleteNotificationChannelAsync('prayer-azan');
-        await Notifications.deleteNotificationChannelAsync('prayer-azan-v1');
-      } catch { /* channel may not exist yet */ }
-      await Notifications.setNotificationChannelAsync(channelId, {
+  } catch { /* categories are best-effort */ }
+
+  // Android: create dedicated channels with custom azan sounds.
+  // Channel sound is IMMUTABLE once created — so we use separate channels
+  // per sound. The notification's `sound` field is IGNORED on Android when
+  // a channelId is set; the channel's sound is what actually plays.
+  if (Platform.OS === 'android') {
+    try {
+      // Clean up legacy channels (they had wrong/no sound).
+      for (const old of ['prayer-azan', 'prayer-azan-v1', 'prayer-azan-v2']) {
+        try { await Notifications.deleteNotificationChannelAsync(old); } catch { /* ignore */ }
+      }
+      // Channel for azan1 (default)
+      await Notifications.setNotificationChannelAsync('prayer-azan-s1', {
         name: 'Prayer Azan',
         importance: Notifications.AndroidImportance.MAX,
         sound: 'azan', // res/raw/azan.ogg (no extension)
@@ -47,8 +50,26 @@ export async function setupNotificationCategories(): Promise<void> {
         enableVibrate: true,
         showBadge: false,
       });
+      // Channel for azan2
+      await Notifications.setNotificationChannelAsync('prayer-azan-s2', {
+        name: 'Prayer Azan (Alt)',
+        importance: Notifications.AndroidImportance.MAX,
+        sound: 'azan2', // res/raw/azan2.ogg (no extension)
+        vibrationPattern: [0, 500, 200, 500],
+        enableVibrate: true,
+        showBadge: false,
+      });
+      console.log('[azan] notification channels created (s1, s2)');
+    } catch (e) {
+      console.warn('[azan] channel setup failed:', e);
     }
-  } catch { /* categories are best-effort */ }
+  }
+}
+
+/** Get the Android channel ID matching the user's azan sound setting. */
+export function getAzanChannelId(azanSound: string): string {
+  if (azanSound === 'azan2') return 'prayer-azan-s2';
+  return 'prayer-azan-s1'; // default 'azan'
 }
 
 /**
@@ -148,10 +169,17 @@ export async function reschedulePrayerNotifications(
               : silent
                 ? 'It is time for prayer.'
                 : 'Tap to open Deen — azan will play.',
-            sound: silent && !forceWake ? undefined : (settings.azanSound === 'azan2' ? 'azan2' : 'azan'),
+            // iOS: sound name plays from bundle. Android: channel controls the
+            // sound, so we pick the channel matching the user's setting below.
+            sound: Platform.OS === 'ios'
+              ? (silent && !forceWake ? undefined : (settings.azanSound === 'azan2' ? 'azan2' : 'azan'))
+              : undefined,
             categoryIdentifier: 'prayer-azan',
-            // Android: use our custom channel with the azan sound baked in.
-            ...(Platform.OS === 'android' ? { android: { channelId: 'prayer-azan-v2' } } : {}),
+            // Android: use the channel whose baked-in sound matches the setting.
+            // (Channel sound is immutable; notification `sound` is ignored.)
+            ...(Platform.OS === 'android' && !silent
+              ? { android: { channelId: getAzanChannelId(settings.azanSound) } }
+              : {}),
             // Payload lets the app auto-play azan when the notification is tapped.
             data: { kind: 'prayer-azan', prayer: key, playAzan: !silent || forceWake, forceWake },
             priority: Notifications.AndroidNotificationPriority.MAX,

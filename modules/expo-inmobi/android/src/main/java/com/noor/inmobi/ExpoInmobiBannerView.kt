@@ -44,14 +44,22 @@ class ExpoInmobiBannerView(context: Context, appContext: AppContext) : ExpoView(
     banner?.let { removeView(it) }
     banner = null
 
-    val bannerAd = try {
-      InMobiBanner(context, placementId)
-    } catch (e: Exception) {
-      Log.w(TAG, "InMobiBanner creation failed: ${e.message}")
-      loadedPlacementId = -1L
-      return
-    }
-    bannerAd.setListener(object : BannerAdEventListener() {
+    // Standard 320x50 banner size, centered horizontally.
+    val density = resources.displayMetrics.density
+    val widthPx = (320 * density).toInt()
+    val heightPx = (50 * density).toInt()
+    val params = LayoutParams(widthPx, heightPx)
+
+    // InMobi SDK is not thread-safe — create the banner on the UI thread.
+    post {
+      val bannerAd = try {
+        InMobiBanner(context, placementId)
+      } catch (e: Exception) {
+        Log.w(TAG, "InMobiBanner creation failed: ${e.message}")
+        loadedPlacementId = -1L
+        return@post
+      }
+      bannerAd.setListener(object : BannerAdEventListener() {
       override fun onAdLoadSucceeded(banner: InMobiBanner, adMetaInfo: AdMetaInfo) {
         Log.d(TAG, "InMobi banner loaded (placement=$placementId)")
         bannerAd.visibility = VISIBLE
@@ -87,15 +95,7 @@ class ExpoInmobiBannerView(context: Context, appContext: AppContext) : ExpoView(
       }
     })
 
-    // Standard 320x50 banner size, centered horizontally.
-    val density = resources.displayMetrics.density
-    val widthPx = (320 * density).toInt()
-    val heightPx = (50 * density).toInt()
-    val params = LayoutParams(widthPx, heightPx)
-
-    // Add with LayoutParams in one call (ensures proper measurement).
-    // Ensure we're on the UI thread for view creation.
-    post {
+      // Add with LayoutParams in one call (ensures proper measurement).
       addView(bannerAd, params)
       banner = bannerAd
       bannerAd.load()

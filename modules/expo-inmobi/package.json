@@ -1,0 +1,1 @@
+{"description":"Direct InMobi SDK banner integration for Expo (no AdMob)","devDependencies":{"expo-modules-core":"~57.0.22"},"main":"src/index.ts","name":"expo-inmobi","peerDependencies":{"expo-modules-core":"*","react":"*","react-native":"*"},"types":"src/index.ts","version":"1.0.0"}

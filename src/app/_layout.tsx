@@ -35,6 +35,9 @@ function Inner() {
   useEffect(() => {
     // Analytics: track app open for DAU (privacy-first, opt-out in Settings).
     trackAppOpen();
+    // CRITICAL: Create notification channel with azan sound on EVERY app start.
+    // Without this, killed-app notifications use the default channel (no azan sound).
+    import('../lib/notifications').then(m => m.setupNotificationCategories()).catch(() => {});
     getJSON('onboarded', false).then(v => {
       setOnboarded(!!v);
       setChecked(true);

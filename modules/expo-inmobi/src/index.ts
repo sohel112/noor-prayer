@@ -42,7 +42,7 @@ export const isInMobiNativeAvailable = ExpoInmobiModule !== null;
 
 const NativeBannerView: React.ComponentType<InMobiBannerViewProps> | null =
   isInMobiNativeAvailable
-    ? requireNativeViewManager('ExpoInmobi')
+    ? requireNativeViewManager('ExpoInmobiBannerView')
     : null;
 
 /** 320x50 banner backed directly by InMobi's native SDK. Renders nothing if native module is absent. */

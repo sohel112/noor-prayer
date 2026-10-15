@@ -22,10 +22,6 @@ class ExpoInmobiModule : Module() {
     Function("initialize") { accountId: String ->
       val context = appContext.reactContext
         ?: throw IllegalStateException("ExpoInmobi: React context not available")
-      // Enable debug logging to surface init/load errors in logcat.
-      try {
-        com.inmobi.sdk.InMobiSdk.setLogLevel(com.inmobi.sdk.LogLevel.DEBUG)
-      } catch (_: Exception) { /* older SDK — ignore */ }
       InMobiSdk.init(
         context,
         accountId,

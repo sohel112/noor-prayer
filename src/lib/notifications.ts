@@ -38,7 +38,10 @@ export async function setupNotificationCategories(): Promise<void> {
   if (Platform.OS === 'android') {
     try {
       // Clean up legacy channels (they had wrong/no sound).
-      for (const old of ['prayer-azan', 'prayer-azan-v1', 'prayer-azan-v2']) {
+      // NOTE: Android channels are IMMUTABLE — sound can't be changed after
+      // creation. We delete s1/s2 too so they get recreated with the correct
+      // sound file. This runs on every app start, so it's safe.
+      for (const old of ['prayer-azan', 'prayer-azan-v1', 'prayer-azan-v2', 'prayer-azan-s1', 'prayer-azan-s2']) {
         try { await Notifications.deleteNotificationChannelAsync(old); } catch { /* ignore */ }
       }
       // Channel for azan1 (default)
@@ -49,6 +52,10 @@ export async function setupNotificationCategories(): Promise<void> {
         vibrationPattern: [0, 500, 200, 500],
         enableVibrate: true,
         showBadge: false,
+        audioAttributes: {
+          usage: Notifications.AndroidAudioUsage.ALARM,
+          contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+        },
       });
       // Channel for azan2
       await Notifications.setNotificationChannelAsync('prayer-azan-s2', {
@@ -58,6 +65,10 @@ export async function setupNotificationCategories(): Promise<void> {
         vibrationPattern: [0, 500, 200, 500],
         enableVibrate: true,
         showBadge: false,
+        audioAttributes: {
+          usage: Notifications.AndroidAudioUsage.ALARM,
+          contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+        },
       });
       console.log('[azan] notification channels created (s1, s2)');
     } catch (e) {

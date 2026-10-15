@@ -92,11 +92,14 @@ class ExpoInmobiBannerView(context: Context, appContext: AppContext) : ExpoView(
     val widthPx = (320 * density).toInt()
     val heightPx = (50 * density).toInt()
     val params = LayoutParams(widthPx, heightPx)
-    bannerAd.layoutParams = params
 
-    addView(bannerAd)
-    banner = bannerAd
-    bannerAd.load()
+    // Add with LayoutParams in one call (ensures proper measurement).
+    // Ensure we're on the UI thread for view creation.
+    post {
+      addView(bannerAd, params)
+      banner = bannerAd
+      bannerAd.load()
+    }
   }
 
   override fun onDetachedFromWindow() {

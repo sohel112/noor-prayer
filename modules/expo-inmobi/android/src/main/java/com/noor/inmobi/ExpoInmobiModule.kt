@@ -22,6 +22,10 @@ class ExpoInmobiModule : Module() {
     Function("initialize") { accountId: String ->
       val context = appContext.reactContext
         ?: throw IllegalStateException("ExpoInmobi: React context not available")
+      // Enable debug logging to surface init/load errors in logcat.
+      try {
+        com.inmobi.sdk.InMobiSdk.setLogLevel(com.inmobi.sdk.LogLevel.DEBUG)
+      } catch (_: Exception) { /* older SDK — ignore */ }
       InMobiSdk.init(
         context,
         accountId,
@@ -30,10 +34,17 @@ class ExpoInmobiModule : Module() {
           override fun onInitializationComplete(error: Error?) {
             // SDK ready — banners can load now. Error is null on success.
             isSdkReady = error == null
+            if (error != null) {
+              android.util.Log.e("ExpoInmobi", "SDK init failed: ${error.message}")
+            } else {
+              android.util.Log.d("ExpoInmobi", "SDK init success")
+            }
           }
         }
       )
     }
+
+    Function("isReady") { isSdkReady }
 
     View(ExpoInmobiBannerView::class) {
       Prop("placementId") { view: ExpoInmobiBannerView, placementId: Long ->

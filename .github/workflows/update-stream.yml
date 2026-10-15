@@ -1,0 +1,43 @@
+name: Update Makkah Live Stream URL
+
+# Zero-touch automation: every 6 hours, check YouTube for the current
+# Makkah live stream and update streams.json if it changed.
+# The app fetches streams.json from the raw GitHub URL — no app rebuild needed.
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # every 6 hours
+  workflow_dispatch:  # allow manual trigger from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  update-stream:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check for live stream
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: python update_stream.py
+
+      - name: Commit updated streams.json
+        run: |
+          if [ -n "$(git status --porcelain streams.json)" ]; then
+            git config user.name "deen-bot"
+            git config user.email "deen-bot@users.noreply.github.com"
+            git add streams.json
+            git commit -m "chore: auto-update Makkah live stream [skip ci]"
+            git push
+            echo "streams.json updated and pushed."
+          else
+            echo "No changes to commit."
+          fi

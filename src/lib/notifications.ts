@@ -186,21 +186,24 @@ export async function reschedulePrayerNotifications(
                 ? 'It is time for prayer.'
                 : 'Tap to open Deen — azan will play.',
             // iOS: sound name plays from bundle. Android: channel controls the
-            // sound, so we pick the channel matching the user's setting below.
+            // sound (channelId is set on the trigger below).
             sound: Platform.OS === 'ios'
               ? (silent && !forceWake ? undefined : (settings.azanSound === 'azan2' ? 'azan2' : 'azan'))
               : undefined,
             categoryIdentifier: 'prayer-azan',
-            // Android: use the channel whose baked-in sound matches the setting.
-            // (Channel sound is immutable; notification `sound` is ignored.)
-            ...(Platform.OS === 'android' && !silent
-              ? { android: { channelId: getAzanChannelId(settings.azanSound) } }
-              : {}),
             // Payload lets the app auto-play azan when the notification is tapped.
             data: { kind: 'prayer-azan', prayer: key, playAzan: !silent || forceWake, forceWake },
             priority: Notifications.AndroidNotificationPriority.MAX,
           },
-          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: at,
+            // Android: channelId MUST be on the trigger (per Expo SDK 57 docs).
+            // The channel's baked-in sound is what actually plays.
+            ...(Platform.OS === 'android' && !silent
+              ? { channelId: getAzanChannelId(settings.azanSound) }
+              : {}),
+          },
         });
 
         // Optional 15-minute heads-up reminder (toggle: settings.notifications.reminder15)

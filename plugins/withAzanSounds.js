@@ -20,7 +20,7 @@ module.exports = function withAzanSounds(config) {
         fs.mkdirSync(destDir, { recursive: true });
       }
 
-      for (const file of ['azan.ogg', 'azan2.ogg']) {
+      for (const file of ['azan.mp3', 'azan2.mp3']) {
         const src = path.join(srcDir, file);
         const dest = path.join(destDir, file);
         if (fs.existsSync(src)) {

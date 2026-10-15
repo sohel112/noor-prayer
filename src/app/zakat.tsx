@@ -7,6 +7,18 @@ import { t } from '../lib/i18n';
 // Zakat: 2.5% on wealth above nisab held for a lunar year.
 // Nisab = value of 85g gold OR 612.36g silver (user picks; silver = more cautious).
 
+// Moved outside component — defining inside causes TextInput remount on every keystroke (keyboard dismiss bug).
+function Field({ label, value, set, th }: { label: string; value: string; set: (v: string) => void; th: any }) {
+  return (
+    <View style={{ marginTop: 8 }}>
+      <Sub>{label}</Sub>
+      <TextInput value={value} onChangeText={set} keyboardType="numeric" placeholder="0"
+        style={[styles.input, { color: th.text, borderColor: th.border, backgroundColor: th.bg }]}
+        placeholderTextColor={th.sub} />
+    </View>
+  );
+}
+
 export default function Zakat() {
   const { settings } = useSettings();
   const th = useTheme();
@@ -25,30 +37,21 @@ export default function Zakat() {
   const nisab = useSilverNisab ? 612.36 * num(silverRate) : 85 * num(goldRate);
   const due = total >= nisab && total > 0 ? total * 0.025 : 0;
 
-  const Field = ({ label, value, set }: { label: string; value: string; set: (v: string) => void }) => (
-    <View style={{ marginTop: 8 }}>
-      <Sub>{label}</Sub>
-      <TextInput value={value} onChangeText={set} keyboardType="numeric" placeholder="0"
-        style={[styles.input, { color: th.text, borderColor: th.border, backgroundColor: th.bg }]}
-        placeholderTextColor={th.sub} />
-    </View>
-  );
-
   return (
     <Screen>
       <Scroller>
         <Title>💰 {t('zakat', lang)}</Title>
         <Card>
-          <Field label="Cash in hand & bank" value={cash} set={setCash} />
-          <Field label="Gold value" value={gold} set={setGold} />
-          <Field label="Silver value" value={silver} set={setSilver} />
-          <Field label="Investments / trade goods" value={invest} set={setInvest} />
-          <Field label="Debts owed (subtract)" value={debts} set={setDebts} />
+          <Field label="Cash in hand & bank" value={cash} set={setCash} th={th} />
+          <Field label="Gold value" value={gold} set={setGold} th={th} />
+          <Field label="Silver value" value={silver} set={setSilver} th={th} />
+          <Field label="Investments / trade goods" value={invest} set={setInvest} th={th} />
+          <Field label="Debts owed (subtract)" value={debts} set={setDebts} th={th} />
         </Card>
         <Card>
           <Sub style={{ fontWeight: '700', color: th.text }}>Nisab rates (per gram, editable)</Sub>
-          <Field label="Gold rate/g" value={goldRate} set={setGoldRate} />
-          <Field label="Silver rate/g" value={silverRate} set={setSilverRate} />
+          <Field label="Gold rate/g" value={goldRate} set={setGoldRate} th={th} />
+          <Field label="Silver rate/g" value={silverRate} set={setSilverRate} th={th} />
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
             {[{ l: 'Silver nisab', v: true }, { l: 'Gold nisab', v: false }].map(o => (
               <Text key={o.l} onPress={() => setUseSilverNisab(o.v)}

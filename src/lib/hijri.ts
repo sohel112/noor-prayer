@@ -1,6 +1,8 @@
 // Hijri (Islamic) calendar — arithmetic (Kuwaiti algorithm) implementation.
 // Runs fully on-device. Includes optional manual moon-sighting adjustment (±days).
 
+import type { Lang } from './settings';
+
 export interface HijriDate { year: number; month: number; day: number; }
 
 const MONTHS = [
@@ -13,6 +15,12 @@ const MONTHS_UR = [
   'محرم', 'صفر', 'ربیع الاول', 'ربیع الثانی',
   'جمادی الاول', 'جمادی الثانی', 'رجب', 'شعبان',
   'رمضان', 'شوال', 'ذوالقعدہ', 'ذوالحجہ',
+];
+
+const MONTHS_AR = [
+  'محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني',
+  'جمادى الأولى', 'جمادى الآخرة', 'رجب', 'شعبان',
+  'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة',
 ];
 
 function gregorianToJd(y: number, m: number, d: number): number {
@@ -37,12 +45,13 @@ export function toHijri(date: Date, adjustmentDays = 0): HijriDate {
   return { year, month, day };
 }
 
-export function hijriMonthName(month: number, lang: 'en' | 'ur' | 'hi' = 'en'): string {
-  if (lang === 'ur') return MONTHS_UR[month - 1] ?? '';
+export function hijriMonthName(month: number, lang: Lang = 'en'): string {
+  if (lang === 'ur' || lang === 'fa') return MONTHS_UR[month - 1] ?? '';
+  if (lang === 'ar' || lang === 'ku') return MONTHS_AR[month - 1] ?? '';
   return MONTHS[month - 1] ?? '';
 }
 
-export function formatHijri(h: HijriDate, lang: 'en' | 'ur' | 'hi' = 'en'): string {
+export function formatHijri(h: HijriDate, lang: Lang = 'en'): string {
   return `${h.day} ${hijriMonthName(h.month, lang)} ${h.year}H`;
 }
 

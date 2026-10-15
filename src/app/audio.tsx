@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, Text, View, StyleSheet, ActivityIndicator } from 'react-native';
-import { Audio } from 'expo-av';
+import { useAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { Screen, Scroller, Card, Title, Sub, useTheme } from '../components/ui';
 import { useSettings } from '../lib/settings';
 import { t } from '../lib/i18n';
@@ -13,52 +13,60 @@ export default function QuranAudio() {
   const lang = settings.lang;
   const [surah, setSurah] = useState(1);
   const [reciter, setReciter] = useState(RECITERS[0]);
-  const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ayah, setAyah] = useState(1);
   const [error, setError] = useState('');
-  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const player = useAudioPlayer(ayahAudioUrl(reciter, surah, ayah));
+  const [playing, setPlaying] = useState(false);
 
   const totalAyahs = SURAHS[surah - 1]?.ayas ?? 7;
 
-  const stop = async () => {
-    try { await soundRef.current?.unloadAsync(); } catch { /* noop */ }
-    soundRef.current = null;
+  useEffect(() => {
+    setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const sub = player.addListener('playbackStatusUpdate', (st: any) => {
+      setPlaying(!!st.playing);
+      if (st.didJustFinish) {
+        if (ayah < totalAyahs) {
+          setAyah(a => a + 1);
+        } else {
+          player.pause();
+          player.seekTo(0);
+        }
+      }
+    });
+    return () => sub.remove();
+  }, [player, ayah, totalAyahs]);
+
+  // When ayah changes, replace source and play
+  useEffect(() => {
+    player.replace(ayahAudioUrl(reciter, surah, ayah));
+    setLoading(true);
+    setError('');
+    const timer = setTimeout(() => setLoading(false), 1500);
+    player.play();
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ayah, surah, reciter]);
+
+  const toggle = () => {
+    if (playing) player.pause();
+    else player.play();
+  };
+
+  const stopAll = () => {
+    player.pause();
+    player.seekTo(0);
     setPlaying(false);
   };
 
-  const playAyah = async (n: number) => {
-    await stop();
-    setLoading(true);
-    setError('');
-    try {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: true });
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: ayahAudioUrl(reciter, surah, n) },
-        { shouldPlay: true },
-      );
-      soundRef.current = sound;
-      setAyah(n);
-      setPlaying(true);
-      setLoading(false);
-      sound.setOnPlaybackStatusUpdate(st => {
-        if (st.isLoaded && st.didJustFinish) {
-          if (n < totalAyahs) playAyah(n + 1);
-          else stop();
-        }
-      });
-    } catch {
-      setLoading(false);
-      setError('Audio stream unavailable. Check your connection and try again.');
-    }
-  };
-
-  useEffect(() => () => { stop(); }, []);
-
   const pickSurah = (d: number) => {
     const next = Math.min(114, Math.max(1, surah + d));
+    stopAll();
     setSurah(next);
-    stop();
     setAyah(1);
   };
 
@@ -70,7 +78,7 @@ export default function QuranAudio() {
           <Sub style={{ fontWeight: '700', color: th.text }}>Reciter</Sub>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
             {RECITERS.map(r => (
-              <TouchableOpacity key={r.id} onPress={() => { setReciter(r); stop(); }}
+              <TouchableOpacity key={r.id} onPress={() => { setReciter(r); stopAll(); setAyah(1); }}
                 style={[styles.chip, { borderColor: th.border, backgroundColor: reciter.id === r.id ? th.accent : th.card }]}>
                 <Text style={{ color: reciter.id === r.id ? '#fff' : th.text, fontWeight: '600' }}>{r.name}</Text>
               </TouchableOpacity>
@@ -97,11 +105,11 @@ export default function QuranAudio() {
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
             <TouchableOpacity
               style={[styles.play, { backgroundColor: th.accent }]}
-              onPress={() => (playing ? stop() : playAyah(ayah))}
+              onPress={toggle}
             >
-              <Text style={{ color: '#fff', fontSize: 22 }}>{playing ? '⏸' : '▶'}</Text>
+              <Text style={{ color: th.onAccent, fontSize: 22 }}>{playing ? '⏸' : '▶'}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.play, { borderColor: th.border, borderWidth: 1 }]} onPress={() => playAyah(1)}>
+            <TouchableOpacity style={[styles.play, { borderColor: th.border, borderWidth: 1 }]} onPress={() => { stopAll(); setAyah(1); }}>
               <Text style={{ color: th.text, fontSize: 18 }}>⏮</Text>
             </TouchableOpacity>
           </View>

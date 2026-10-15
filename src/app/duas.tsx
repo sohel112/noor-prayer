@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { TextInput, TouchableOpacity, Text, View, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
 import { Screen, Scroller, Card, Title, Sub, Arabic, useTheme } from '../components/ui';
 import { useSettings } from '../lib/settings';
 import { t } from '../lib/i18n';
@@ -38,12 +39,19 @@ export default function Duas() {
           style={[styles.input, { color: th.text, borderColor: th.border, backgroundColor: th.card }]}
           placeholderTextColor={th.sub} />
         <View style={styles.cats}>
-          {['All', 'Favorites', ...DUA_CATEGORIES].map(c => (
-            <TouchableOpacity key={c} onPress={() => setCat(c)}
-              style={[styles.chip, { borderColor: th.border, backgroundColor: cat === c ? th.accentSoft : th.card }]}>
-              <Text style={{ color: th.text, fontSize: 13 }}>{c}</Text>
-            </TouchableOpacity>
-          ))}
+          {['All', 'Favorites', ...DUA_CATEGORIES].map(c => {
+            const active = cat === c;
+            return (
+              <TouchableOpacity key={c} onPress={() => setCat(c)}
+                style={[styles.chip, {
+                  borderColor: active ? th.accent : th.border,
+                  backgroundColor: active ? th.accent : th.card,
+                  borderWidth: active ? 0 : 1,
+                }]}>
+                <Text style={{ color: active ? th.onAccent : th.text, fontSize: 13, fontWeight: active ? '800' : '600' }}>{c}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
         {list.map(d => (
           <Card key={d.id}>
@@ -57,6 +65,23 @@ export default function Duas() {
             <Sub style={{ marginTop: 8 }}>{lang === 'ur' ? d.ur : d.en}</Sub>
           </Card>
         ))}
+
+        {/* Tasbih quick counter */}
+        <Card style={{ alignItems: 'center', paddingVertical: 20 }}>
+          <Text style={[{ color: th.gold, fontSize: 12, fontWeight: '800', letterSpacing: 2.5 }]}>
+            {t('tasbih', lang).toUpperCase()}
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push('/tasbih')}
+            style={[styles.tasbihBtn, { borderColor: th.gold, backgroundColor: th.accentSoft }]}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 30 }}>📿</Text>
+            <Text style={{ color: th.gold, fontWeight: '800', fontSize: 15, marginTop: 4 }}>
+              {t('openCounter', lang)} →
+            </Text>
+          </TouchableOpacity>
+        </Card>
       </Scroller>
     </Screen>
   );
@@ -66,4 +91,8 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 15 },
   cats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { borderWidth: 1, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 7 },
+  tasbihBtn: {
+    borderWidth: 1.5, borderRadius: 18, paddingVertical: 16, paddingHorizontal: 40,
+    alignItems: 'center', marginTop: 12,
+  },
 });

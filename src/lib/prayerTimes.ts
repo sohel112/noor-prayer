@@ -159,8 +159,7 @@ export function calculatePrayerTimes(
 }
 
 /** "05:42" or "5:42 PM" depending on 24h flag. */
-export function formatTime(t: number, use24h: boolean): string {
-  const h24 = Math.floor(t);
+export function formatTime(t: number, use24h: boolean): string {  const h24 = Math.floor(t);
   const m = Math.floor((t - h24) * 60);
   const mm = String(m).padStart(2, '0');
   if (use24h) return `${String(h24).padStart(2, '0')}:${mm}`;
@@ -181,4 +180,83 @@ export function nextPrayer(times: PrayerTimes, now: Date): { name: keyof PrayerT
   at.setDate(at.getDate() + 1);
   at.setHours(Math.floor(times.fajr), Math.floor((times.fajr % 1) * 60), 0, 0);
   return { name: 'fajr', at };
+}
+
+// ---------------------------------------------------------------------------
+// Auto method detection (100% offline)
+// Picks the standard calculation method for the user's country from GPS
+// coordinates using lat/lon bounding boxes. No network, no API.
+// ---------------------------------------------------------------------------
+
+interface CountryBox {
+  name: string;
+  minLat: number; maxLat: number;
+  minLng: number; maxLng: number;
+  methodId: string;
+}
+
+// Ordered: specific countries first, regional catch-alls last (first match wins).
+const COUNTRY_BOXES: CountryBox[] = [
+  // --- South Asia → Karachi (Univ. of Islamic Sciences) ---
+  { name: 'Pakistan', minLat: 22, maxLat: 37.2, minLng: 60.8, maxLng: 75.2, methodId: 'karachi' },
+  { name: 'Bangladesh', minLat: 20.5, maxLat: 26.7, minLng: 88, maxLng: 92.7, methodId: 'karachi' },
+  { name: 'Nepal', minLat: 26.3, maxLat: 30.5, minLng: 80, maxLng: 88.2, methodId: 'karachi' },
+  { name: 'Sri Lanka', minLat: 5.9, maxLat: 9.9, minLng: 79.6, maxLng: 81.9, methodId: 'karachi' },
+  { name: 'Afghanistan', minLat: 29.3, maxLat: 38.6, minLng: 60.5, maxLng: 75, methodId: 'karachi' },
+  { name: 'India', minLat: 6.5, maxLat: 35.6, minLng: 68.1, maxLng: 97.4, methodId: 'karachi' },
+  // --- North America → ISNA ---
+  { name: 'Canada', minLat: 41.7, maxLat: 72, minLng: -141, maxLng: -52, methodId: 'isna' },
+  { name: 'USA', minLat: 24.5, maxLat: 49.4, minLng: -125, maxLng: -66.9, methodId: 'isna' },
+  // --- Shia-majority → Jafari (before Iran: small, specific boxes win) ---
+  { name: 'Bahrain', minLat: 25.5, maxLat: 26.3, minLng: 50.3, maxLng: 50.7, methodId: 'jafari' },
+  // --- Gulf states → Egyptian (before Iraq/Iran: avoids Gulf overlap) ---
+  { name: 'Qatar', minLat: 24.4, maxLat: 26.2, minLng: 50.7, maxLng: 51.7, methodId: 'egypt' },
+  { name: 'UAE', minLat: 22.6, maxLat: 26.1, minLng: 51.5, maxLng: 56.4, methodId: 'egypt' },
+  { name: 'Kuwait', minLat: 28.5, maxLat: 30.1, minLng: 46.5, maxLng: 48.5, methodId: 'egypt' },
+  { name: 'Iraq', minLat: 29, maxLat: 37.4, minLng: 38.7, maxLng: 48.6, methodId: 'jafari' },
+  // --- Iran → Institute of Geophysics, Tehran ---
+  { name: 'Iran', minLat: 25, maxLat: 39.8, minLng: 44, maxLng: 63.4, methodId: 'tehran' },
+  // --- Middle East / North Africa → Egyptian General Authority ---
+  { name: 'Egypt', minLat: 21.9, maxLat: 31.7, minLng: 24.6, maxLng: 35, methodId: 'egypt' },
+  { name: 'Saudi Arabia', minLat: 16, maxLat: 32.2, minLng: 34.6, maxLng: 55.7, methodId: 'egypt' },
+  { name: 'Oman', minLat: 16.6, maxLat: 26.6, minLng: 51.9, maxLng: 59.9, methodId: 'egypt' },
+  { name: 'Yemen', minLat: 12.5, maxLat: 19, minLng: 42.5, maxLng: 55, methodId: 'egypt' },
+  { name: 'Jordan', minLat: 29.1, maxLat: 33.4, minLng: 34.9, maxLng: 39.3, methodId: 'egypt' },
+  { name: 'Lebanon', minLat: 33, maxLat: 34.7, minLng: 35, maxLng: 36.7, methodId: 'egypt' },
+  { name: 'Syria', minLat: 32, maxLat: 37.3, minLng: 35.7, maxLng: 42.4, methodId: 'egypt' },
+  // --- Europe / SE Asia → Muslim World League ---
+  { name: 'UK', minLat: 49.8, maxLat: 58.7, minLng: -5.8, maxLng: 1.8, methodId: 'mwl' },
+  { name: 'France', minLat: 41.3, maxLat: 51.1, minLng: -5.2, maxLng: 8.3, methodId: 'mwl' },
+  { name: 'Germany', minLat: 47.2, maxLat: 55.1, minLng: 5.8, maxLng: 15.1, methodId: 'mwl' },
+  { name: 'Turkey', minLat: 35.8, maxLat: 42.2, minLng: 25.6, maxLng: 45, methodId: 'mwl' },
+  { name: 'Indonesia', minLat: -11, maxLat: 6.2, minLng: 95, maxLng: 141, methodId: 'mwl' },
+  { name: 'Malaysia', minLat: 0.8, maxLat: 7.4, minLng: 99.6, maxLng: 104.6, methodId: 'mwl' },
+  // --- Regional catch-alls (last) ---
+  { name: 'Europe', minLat: 36, maxLat: 71, minLng: -10, maxLng: 45, methodId: 'mwl' },
+  { name: 'Middle East', minLat: 12, maxLat: 42, minLng: 35, maxLng: 60, methodId: 'egypt' },
+];
+
+/** Result of offline country/method detection. */
+export interface DetectedMethod {
+  methodId: string;
+  /** Human-readable region name, or null if unknown. */
+  country: string | null;
+}
+
+/**
+ * Detect the standard prayer calculation method for GPS coordinates.
+ * 100% offline (bounding boxes). Falls back to Muslim World League.
+ */
+export function detectMethodForLocation(lat: number, lng: number): DetectedMethod {
+  for (const b of COUNTRY_BOXES) {
+    if (lat >= b.minLat && lat <= b.maxLat && lng >= b.minLng && lng <= b.maxLng) {
+      return { methodId: b.methodId, country: b.name };
+    }
+  }
+  return { methodId: 'mwl', country: null };
+}
+
+/** Full method object for a detected result. */
+export function methodForDetection(d: DetectedMethod): PrayerMethod {
+  return PRAYER_METHODS.find(m => m.id === d.methodId) ?? PRAYER_METHODS[0];
 }

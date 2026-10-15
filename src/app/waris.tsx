@@ -8,6 +8,18 @@ import { t } from '../lib/i18n';
 // Full Islamic inheritance law is complex; this covers the standard scenario
 // and advises scholar consultation for special cases.
 
+// Moved outside component — defining inside causes TextInput remount on every keystroke (keyboard dismiss bug).
+function Field({ label, value, set, th }: { label: string; value: string; set: (v: string) => void; th: any }) {
+  return (
+    <View style={{ marginTop: 8 }}>
+      <Sub>{label}</Sub>
+      <TextInput value={value} onChangeText={set} keyboardType="numeric" placeholder="0"
+        style={[styles.input, { color: th.text, borderColor: th.border, backgroundColor: th.bg }]}
+        placeholderTextColor={th.sub} />
+    </View>
+  );
+}
+
 export default function Waris() {
   const { settings } = useSettings();
   const th = useTheme();
@@ -47,21 +59,12 @@ export default function Waris() {
 
   const all = [...shares, ...childShares];
 
-  const Field = ({ label, value, set }: { label: string; value: string; set: (v: string) => void }) => (
-    <View style={{ marginTop: 8 }}>
-      <Sub>{label}</Sub>
-      <TextInput value={value} onChangeText={set} keyboardType="numeric" placeholder="0"
-        style={[styles.input, { color: th.text, borderColor: th.border, backgroundColor: th.bg }]}
-        placeholderTextColor={th.sub} />
-    </View>
-  );
-
   return (
     <Screen>
       <Scroller>
         <Title>⚖️ {t('waris', lang)}</Title>
         <Card>
-          <Field label="Total estate value" value={estate} set={setEstate} />
+          <Field label="Total estate value" value={estate} set={setEstate} th={th} />
           <Sub style={{ marginTop: 10 }}>Deceased:</Sub>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
             {(['male', 'female'] as const).map(g => (
@@ -72,10 +75,10 @@ export default function Waris() {
               </Text>
             ))}
           </View>
-          <Field label="Sons" value={sons} set={setSons} />
-          <Field label="Daughters" value={daughters} set={setDaughters} />
+          <Field label="Sons" value={sons} set={setSons} th={th} />
+          <Field label="Daughters" value={daughters} set={setDaughters} th={th} />
           {deceased === 'male'
-            ? <Field label="Wives" value={wife} set={setWife} />
+            ? <Field label="Wives" value={wife} set={setWife} th={th} />
             : <Text onPress={() => setHusbandAlive(!husbandAlive)} style={{ color: th.accent, marginTop: 10, fontSize: 15 }}>
                 {husbandAlive ? '✓' : '○'} Husband alive
               </Text>}

@@ -24,7 +24,7 @@ const DESKTOP_UA =
 // to fetch a fresh list from the config URL below, falling back to this
 // hardcoded list if the fetch fails (offline, etc.).
 const REMOTE_STREAMS_URL =
-  'https://raw.githubusercontent.com/sohail112/noor-prayer/master/streams.json';
+  'https://raw.githubusercontent.com/sohel112/noor-prayer/master/streams.json';
 
 const FALLBACK_STREAMS = [
   { id: 'eC4LfEVxvKg', label: 'Stream 1' },

@@ -3,9 +3,13 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getJSON, setJSON } from './storage';
+import { applyRTL } from './i18n';
 import type { AsrJuristic, HighLatitudeRule } from './prayerTimes';
 
-export type Lang = 'en' | 'ur' | 'hi';
+export type Lang =
+  | 'en' | 'ur' | 'hi' | 'ar' | 'tr' | 'fr' | 'id' | 'bn' | 'fa' | 'ms'
+  | 'es' | 'ru' | 'pt' | 'de' | 'it' | 'nl' | 'zh' | 'ja' | 'ko' | 'th'
+  | 'vi' | 'sw' | 'ha' | 'uz' | 'kk' | 'az' | 'ku' | 'so';
 export type ThemeMode = 'light' | 'dark';
 
 export interface Settings {
@@ -20,6 +24,7 @@ export interface Settings {
   hijriAdjust: number; // manual moon-sighting ±days
   azanSound: string; // 'azan1' | 'azan2' | 'silent'
   notifications: Record<string, boolean>; // per-prayer on/off
+  fajrForceWake: boolean; // loud force-wake alarm for Fajr (overrides silent via audio mode)
   quietFrom: string; // "HH:MM"
   quietTo: string;
   translation: Lang; // Quran translation language
@@ -27,7 +32,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   lang: 'en',
-  theme: 'dark',
+  theme: 'light',
   use24h: false,
   methodId: 'karachi',
   asrJuristic: 'hanafi',
@@ -37,6 +42,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hijriAdjust: 0,
   azanSound: 'azan1',
   notifications: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true },
+  fajrForceWake: false,
   quietFrom: '22:00',
   quietTo: '04:00',
   translation: 'en',
@@ -53,14 +59,24 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
-    getJSON<Settings>('settings', DEFAULT_SETTINGS).then(s =>
-      setSettings({ ...DEFAULT_SETTINGS, ...s }),
-    );
+    getJSON<Settings>('settings', DEFAULT_SETTINGS).then(s => {
+      const merged = { ...DEFAULT_SETTINGS, ...s };
+      applyRTL(merged.lang);
+      setSettings(merged);
+    });
   }, []);
 
   const update = (p: Partial<Settings>) => {
     setSettings(prev => {
       const next = { ...prev, ...p };
+      if (p.lang && p.lang !== prev.lang) {
+        applyRTL(p.lang);
+        // Auto-sync Quran translation with app language when a translation
+        // exists for it (en/hi/ur). User can still change it manually after.
+        if (['en', 'hi', 'ur'].includes(p.lang)) {
+          next.translation = p.lang as Settings['translation'];
+        }
+      }
       setJSON('settings', next);
       return next;
     });

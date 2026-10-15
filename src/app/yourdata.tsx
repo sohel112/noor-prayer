@@ -36,14 +36,14 @@ export default function YourData() {
     pairs.forEach(([k, v]) => { obj[k] = v; });
     const payload = JSON.stringify({ app: 'noor', exportedAt: new Date().toISOString(), data: obj }, null, 1);
     try {
-      await Share.share({ message: payload, title: 'Noor backup' });
+      await Share.share({ message: payload, title: 'Deen backup' });
     } catch {
       Alert.alert('Export failed', 'Could not share the backup file.');
     }
   };
 
   const wipe = () => {
-    Alert.alert('Delete all my data?', 'This erases everything Noor stored on this phone.', [
+    Alert.alert('Delete all my data?', 'This erases everything Deen stored on this phone.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive',
@@ -92,7 +92,7 @@ export default function YourData() {
         </Card>
 
         <TouchableOpacity style={[styles.btn, { backgroundColor: th.accent }]} onPress={exportData}>
-          <Text style={styles.btnText}>📤 Export my data (backup file)</Text>
+          <Text style={[styles.btnText, { color: th.onAccent }]}>📤 Export my data (backup file)</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.btn, { borderColor: '#C0392B', borderWidth: 1 }]} onPress={wipe}>
           <Text style={{ color: '#C0392B', fontWeight: '700' }}>🗑 Delete all my data</Text>
@@ -105,5 +105,5 @@ export default function YourData() {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1 },
   btn: { borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 10 },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  btnText: { fontWeight: '700', fontSize: 15 },
 });

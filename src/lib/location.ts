@@ -28,21 +28,22 @@ export function useLocation() {
     setLoc(l);
   };
 
-  const useGps = async (): Promise<boolean> => {
+  const useGps = async (): Promise<SavedLocation | null> => {
     const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return false;
+    if (status !== 'granted') return null;
     const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
     const [geo] = await Location.reverseGeocodeAsync({
       latitude: pos.coords.latitude,
       longitude: pos.coords.longitude,
     });
-    await save({
+    const saved: SavedLocation = {
       lat: pos.coords.latitude,
       lng: pos.coords.longitude,
       label: [geo?.city, geo?.country].filter(Boolean).join(', ') || 'GPS location',
       source: 'gps',
-    });
-    return true;
+    };
+    await save(saved);
+    return saved;
   };
 
   return { loc, loading, save, useGps };

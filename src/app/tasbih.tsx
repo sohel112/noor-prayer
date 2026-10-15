@@ -67,7 +67,7 @@ export default function Tasbih() {
           </View>
           <Sub>{t('tapToCount', lang)} · target {target}</Sub>
           <TouchableOpacity style={[styles.bigBtn, { backgroundColor: th.accent }]} onPress={tap} activeOpacity={0.7}>
-            <Text style={styles.bigBtnText}>تسبیح</Text>
+            <Text style={[styles.bigBtnText, { color: th.onAccent }]}>تسبیح</Text>
           </TouchableOpacity>
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
             <TouchableOpacity onPress={reset} style={[styles.smallBtn, { borderColor: th.border }]}>
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   },
   count: { fontSize: 40, fontWeight: '800' },
   bigBtn: { width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
-  bigBtnText: { color: '#fff', fontSize: 26, fontWeight: '700' },
+  bigBtnText: { fontSize: 26, fontWeight: '700' },
   smallBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
   dhikrRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1 },
 });

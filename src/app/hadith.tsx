@@ -3,7 +3,7 @@ import { TextInput, Text, View, StyleSheet } from 'react-native';
 import { Screen, Scroller, Card, Title, Sub, Arabic, useTheme } from '../components/ui';
 import { useSettings } from '../lib/settings';
 import { t } from '../lib/i18n';
-import { HADITHS, hadithOfTheDay } from '../data/hadith';
+import { HADITHS, hadithOfTheDay, hadithText } from '../data/hadith';
 
 export default function Hadith() {
   const { settings } = useSettings();
@@ -15,8 +15,11 @@ export default function Hadith() {
   const list = useMemo(() => {
     const query = q.trim().toLowerCase();
     if (!query) return HADITHS;
-    return HADITHS.filter(h => h.en.toLowerCase().includes(query) || h.topic.toLowerCase().includes(query));
-  }, [q]);
+    return HADITHS.filter(h =>
+      hadithText(h, lang).toLowerCase().includes(query) ||
+      h.en.toLowerCase().includes(query) ||
+      h.topic.toLowerCase().includes(query));
+  }, [q, lang]);
 
   return (
     <Screen>
@@ -25,7 +28,7 @@ export default function Hadith() {
         <Card style={{ borderColor: th.accent, borderWidth: 2 }}>
           <Sub style={{ fontWeight: '700', color: th.accent }}>{t('hadithOfDay', lang)} · {today.topic}</Sub>
           <Arabic size={20}>{today.ar}</Arabic>
-          <Sub style={{ marginTop: 8 }}>{today.en}</Sub>
+          <Sub style={{ marginTop: 8 }}>{hadithText(today, lang)}</Sub>
           <Sub style={{ fontStyle: 'italic' }}>— {today.ref}</Sub>
         </Card>
         <TextInput placeholder={t('search', lang)} value={q} onChangeText={setQ}
@@ -35,7 +38,7 @@ export default function Hadith() {
           <Card key={h.id}>
             <Sub style={{ fontWeight: '700', color: th.accent }}>{h.topic} · {h.ref}</Sub>
             <Arabic size={19}>{h.ar}</Arabic>
-            <Sub style={{ marginTop: 8 }}>{h.en}</Sub>
+            <Sub style={{ marginTop: 8 }}>{hadithText(h, lang)}</Sub>
           </Card>
         ))}
       </Scroller>

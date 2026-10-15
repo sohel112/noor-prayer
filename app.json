@@ -1,1 +1,89 @@
-{"expo":{"android":{"adaptiveIcon":{"backgroundColor":"#0B1D13","backgroundImage":"./assets/android-icon-background.png","foregroundImage":"./assets/android-icon-foreground.png","monochromeImage":"./assets/android-icon-monochrome.png"},"package":"com.noor.prayer","permissions":["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","VIBRATE","RECEIVE_BOOT_COMPLETED","SCHEDULE_EXACT_ALARM","USE_EXACT_ALARM"],"predictiveBackGestureEnabled":false},"icon":"./assets/icon.png","ios":{"bundleIdentifier":"com.noor.prayer","infoPlist":{"NSLocationWhenInUseUsageDescription":"Noor uses your location only on this phone to calculate prayer times and Qibla direction. It never leaves your device."},"supportsTablet":true},"name":"Noor — Prayer & Quran","orientation":"portrait","plugins":["expo-router",["expo-location",{"locationAlwaysAndWhenInUsePermission":"Noor uses your location only on this phone to calculate prayer times and Qibla direction."}],["expo-notifications",{"color":"#0B1D13","icon":"./assets/icon.png"}]],"scheme":"noor","slug":"noor-prayer","splash":{"backgroundColor":"#0B1D13","image":"./assets/splash-icon.png","resizeMode":"contain"},"userInterfaceStyle":"automatic","version":"1.0.0","web":{"favicon":"./assets/favicon.png"}}}
+{
+  "expo": {
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B1D13",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.noor.prayer",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM",
+        "USE_EXACT_ALARM",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "icon": "./assets/icon.png",
+    "ios": {
+      "bundleIdentifier": "com.noor.prayer",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Deen uses your location only on this phone to calculate prayer times and Qibla direction. It never leaves your device."
+      },
+      "supportsTablet": true
+    },
+    "name": "Deen: Prayer & Quran",
+    "orientation": "portrait",
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Deen uses your location only on this phone to calculate prayer times and Qibla direction."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0B1D13",
+          "icon": "./assets/icon.png"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0B1D13",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ],
+      "expo-audio",
+      "expo-asset",
+      "expo-web-browser",
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class com.noor.prayer.** { *; }\n-keep class expo.modules.** { *; }"
+          }
+        }
+      ]
+    ],
+    "scheme": "noor",
+    "slug": "noor-prayer",
+    "userInterfaceStyle": "automatic",
+    "version": "1.0.5",
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b3caa7ff-44a5-4691-9abb-7c137ad88d81"
+      },
+      "supabaseUrl": "https://vyrivhtxvdxfqliegpfr.supabase.co",
+      "supabaseAnonKey": "sb_publishable_u-2_q238CPH6Z1LR_1Z1Gg_6751WY_I"
+    },
+    "owner": "sohail112"
+  }
+}

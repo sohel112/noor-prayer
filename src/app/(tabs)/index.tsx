@@ -1,21 +1,71 @@
-import React, { useEffect, useMemo, useState } from 'react';
+// Deen — Home Dashboard (NOOR Clean UI)
+// White cards on light gray, Playfair headings, memoized prayer widgets.
+
+import React, { memo, useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import { Screen, Scroller, Card, Title, Sub, useTheme } from '../../components/ui';
+import { Screen, Scroller, Card, useTheme, Heading, Sub, PrimaryButton, Arabic } from '../../components/ui';
 import { useSettings } from '../../lib/settings';
 import { t } from '../../lib/i18n';
 import { useLocation } from '../../lib/location';
-import { calculatePrayerTimes, formatTime, nextPrayer, PrayerTimes } from '../../lib/prayerTimes';
+import { calculatePrayerTimes, formatTime, type PrayerTimes } from '../../lib/prayerTimes';
 import { toHijri, formatHijri } from '../../lib/hijri';
-import { hadithOfTheDay } from '../../data/hadith';
-import quranData from '../../../assets/data/quran.json';
+import { FONTS, type Theme } from '../../lib/theme';
+import * as Notifications from 'expo-notifications';
+import { reschedulePrayerNotifications } from '../../lib/notifications';
+import ayahOfDayData from '../../../assets/data/ayahOfDay.json';
 
-function useCountdown(target: Date) {
-  const [now, setNow] = useState(Date.now());
+const PRAYER_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+type PrayerName = (typeof PRAYER_ORDER)[number];
+
+const PRAYER_ICONS: Record<PrayerName, string> = {
+  fajr: '🌙', dhuhr: '☀️', asr: '🌤️', maghrib: '🌇', isha: '🌌',
+};
+
+interface AyahOfDay { s: number; a: number; ar: string; en: string }
+
+function ayahOfTheDay(): AyahOfDay {
+  const all = ayahOfDayData as unknown as AyahOfDay[];
+  const now = new Date();
+  const start = Date.UTC(now.getFullYear(), 0, 0);
+  const day = Math.floor((now.getTime() - start) / 86400000) % 366;
+  return all[day % all.length];
+}
+
+function dateLabel(d: Date): string {
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function prayerDate(times: PrayerTimes, name: PrayerName, base: Date): Date {
+  const at = new Date(base);
+  at.setHours(Math.floor(times[name]), Math.floor((times[name] % 1) * 60), 0, 0);
+  return at;
+}
+
+/** Next of the five daily prayers (sunrise excluded) — wraps to tomorrow's Fajr. */
+function nextOfFive(times: PrayerTimes, now: Date): { name: PrayerName; at: Date } {
+  for (const name of PRAYER_ORDER) {
+    const at = prayerDate(times, name, now);
+    if (at.getTime() > now.getTime()) return { name, at };
+  }
+  const at = prayerDate(times, 'fajr', now);
+  at.setDate(at.getDate() + 1);
+  return { name: 'fajr', at };
+}
+
+/** Prayer display name (localized where the i18n key exists) */
+function tName(name: PrayerName): string {
+  const v = t(name, 'en');
+  return v === name ? name[0].toUpperCase() + name.slice(1) : v;
+}
+
+/** Ticking HH:MM:SS countdown — isolated so only this component re-renders each second. */
+function useCountdown(target: Date): string {
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [target.getTime()]);
   const diff = Math.max(0, target.getTime() - now);
   const h = Math.floor(diff / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
@@ -23,14 +73,144 @@ function useCountdown(target: Date) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function ayahOfTheDay() {
-  const now = new Date();
-  const seed = Math.floor(now.getTime() / 86400000);
-  const surahs = (quranData as any).surahs as any[];
-  const s = surahs[Math.abs(seed) % surahs.length];
-  const v = s.verses[Math.abs(seed >> 3) % s.verses.length];
-  return { surah: s.n, ...v };
-}
+// ---------------------------------------------------------------------------
+// Memoized widgets
+// ---------------------------------------------------------------------------
+
+const NextPrayerCard = memo(function NextPrayerCard({ name, at, prayerTime, label }: {
+  name: PrayerName; at: Date; prayerTime: string; label: string;
+}) {
+  const th = useTheme();
+  const countdown = useCountdown(at);
+  return (
+    <TouchableOpacity activeOpacity={0.85} onPress={() => router.push('/prayer-tracker')}>
+      <Card style={styles.nextCard}>
+        <Text style={[styles.nextLabel, { color: th.sub }]}>{label}</Text>
+        <View style={styles.nextRow}>
+          <View style={{ flex: 1 }}>
+            <Heading size={34} style={{ marginBottom: 6 }}>{tName(name)}</Heading>
+            <Text style={[styles.countdown, { color: th.primary, fontVariant: ['tabular-nums'] }]}>
+              {countdown}
+            </Text>
+            <Text style={[styles.nextTime, { color: th.sub }]}>🕰 {prayerTime}</Text>
+          </View>
+          <View style={[styles.moonCircle, { backgroundColor: th.chip }]}>
+            <Text style={{ fontSize: 44 }}>{PRAYER_ICONS[name]}</Text>
+          </View>
+        </View>
+      </Card>
+    </TouchableOpacity>
+  );
+});
+
+const PrayerStrip = memo(function PrayerStrip({ times, nextName, use24h }: {
+  times: PrayerTimes; nextName: PrayerName; use24h: boolean;
+}) {
+  const th = useTheme();
+  return (
+    <View style={styles.strip}>
+      {PRAYER_ORDER.map(name => {
+        const isNext = name === nextName;
+        return (
+          <View key={name} style={[styles.stripItem, isNext && { backgroundColor: th.primary }]}>
+            <Text style={{ fontSize: 20 }}>{PRAYER_ICONS[name]}</Text>
+            <Text style={[styles.stripName, { color: isNext ? '#FFFFFF' : th.text }]}>{tName(name)}</Text>
+            <Text style={[styles.stripTime, { color: isNext ? '#FFFFFF' : th.sub, fontVariant: ['tabular-nums'] }]}>
+              {formatTime(times[name], use24h)}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+});
+
+const AyahCard = memo(function AyahCard({ th }: { th: Theme }) {
+  const ayah = useMemo(() => ayahOfTheDay(), []);
+  return (
+    <Card>
+      <Text style={[styles.cardTitle, { color: th.text }]}>✨ {t('ayahOfDay', 'en')}</Text>
+      <Arabic size={24}>{ayah.ar}</Arabic>
+      <Text style={[styles.ayahEn, { color: th.text }]}>“{ayah.en}”</Text>
+      <Text style={[styles.ayahRef, { color: th.sub }]}>(Qur&apos;an {ayah.s}:{ayah.a})</Text>
+    </Card>
+  );
+});
+
+const QUICK_ACTIONS = [
+  { label: 'Quran', icon: '📖', route: '/(tabs)/quran' },
+  { label: 'Audio', icon: '🔊', route: '/audio' },
+  { label: 'Tasbih', icon: '📿', route: '/tasbih' },
+  { label: 'Duas', icon: '🤲', route: '/(tabs)/duas' },
+  { label: 'Qibla', icon: '🧭', route: '/qibla' },
+] as const;
+
+const QuickActions = memo(function QuickActions({ th }: { th: Theme }) {
+  return (
+    <View style={styles.quickRow}>
+      {QUICK_ACTIONS.map(a => (
+        <TouchableOpacity
+          key={a.label}
+          activeOpacity={0.7}
+          style={styles.quickItem}
+          onPress={() => router.push(a.route as never)}
+        >
+          <View style={[styles.quickCircle, { backgroundColor: th.primary + '1A' }]}>
+            <Text style={{ fontSize: 26 }}>{a.icon}</Text>
+          </View>
+          <Text style={[styles.quickLabel, { color: th.text }]}>{a.label}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+});
+
+// ---------------------------------------------------------------------------
+// All features grid — most-used first
+// ---------------------------------------------------------------------------
+
+const ALL_FEATURES = [
+  // Daily essentials
+  { label: 'Prayer Tracker', icon: '✅', route: '/prayer-tracker' },
+  { label: 'Adhkar', icon: '🌅', route: '/adhkar' },
+  { label: '99 Names', icon: '✨', route: '/names' },
+  { label: 'Hadith', icon: '📜', route: '/hadith' },
+  // Regular use
+  { label: 'Makkah Live', icon: '🕋', route: '/makkah' },
+  { label: 'Mosque Finder', icon: '🕌', route: '/mosques' },
+  { label: 'Ramadan', icon: '🌙', route: '/ramadan' },
+  { label: 'Fajr Alarm', icon: '⏰', route: '/fajr-alarm' },
+  // Occasional tools
+  { label: 'Zakat Calc', icon: '💰', route: '/zakat' },
+  { label: 'Waris Calc', icon: '⚖️', route: '/waris' },
+  { label: 'Hijri Convert', icon: '🔄', route: '/converter' },
+  { label: 'Settings', icon: '⚙️', route: '/settings' },
+] as const;
+
+const FeaturesGrid = memo(function FeaturesGrid({ th }: { th: Theme }) {
+  return (
+    <View style={{ marginTop: 8 }}>
+      <Text style={[styles.cardTitle, { color: th.text, marginBottom: 12 }]}>🌟 Features</Text>
+      <View style={styles.featGrid}>
+        {ALL_FEATURES.map(f => (
+          <TouchableOpacity
+            key={f.label}
+            activeOpacity={0.7}
+            style={[styles.featItem, { backgroundColor: th.card, borderColor: th.border }]}
+            onPress={() => router.push(f.route as never)}
+          >
+            <Text style={{ fontSize: 28 }}>{f.icon}</Text>
+            <Text style={[styles.featLabel, { color: th.text }]} numberOfLines={2}>{f.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 
 export default function Home() {
   const { settings } = useSettings();
@@ -38,109 +218,132 @@ export default function Home() {
   const lang = settings.lang;
   const { loc } = useLocation();
 
+  const today = useMemo(() => new Date(), []);
   const times: PrayerTimes | null = useMemo(() => {
     if (!loc) return null;
-    return calculatePrayerTimes(new Date(), loc.lat, loc.lng, {
+    return calculatePrayerTimes(today, loc.lat, loc.lng, {
       methodId: settings.methodId,
       asrJuristic: settings.asrJuristic,
       highLatitudeRule: settings.highLatitudeRule,
       adjustments: settings.adjustments,
       dhuhrOffsetMinutes: settings.dhuhrOffsetMinutes,
     });
-  }, [loc, settings]);
+  }, [loc, settings.methodId, settings.asrJuristic, settings.highLatitudeRule, settings.adjustments, settings.dhuhrOffsetMinutes, today]);
 
-  const next = useMemo(() => (times ? nextPrayer(times, new Date()) : null), [times]);
-  const countdown = useCountdown(next?.at ?? new Date());
-  const hijri = toHijri(new Date(), settings.hijriAdjust);
-  const hadith = useMemo(() => hadithOfTheDay(), []);
-  const ayah = useMemo(() => ayahOfTheDay(), []);
+  const now = useMemo(() => new Date(), [today]);
+  const next = useMemo(() => (times ? nextOfFive(times, now) : null), [times, now]);
 
-  const quickLinks = [
-    { label: t('tasbih', lang), icon: '📿', route: '/tasbih' },
-    { label: t('duas', lang), icon: '🤲', route: '/duas' },
-    { label: t('names99', lang), icon: '✨', route: '/names' },
-    { label: t('tracker', lang), icon: '✅', route: '/tracker' },
-    { label: t('mosques', lang), icon: '🕌', route: '/mosques' },
-    { label: t('makkahLive', lang), icon: '🕋', route: '/makkah' },
-  ];
+  // Keep prayer-time notifications scheduled (today + tomorrow) whenever
+  // location or calculation settings change. Replaces the old manual button.
+  useEffect(() => {
+    if (!loc || !times) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { status } = await Notifications.getPermissionsAsync();
+        if (status !== 'granted' || cancelled) return;
+        const tomorrow = calculatePrayerTimes(new Date(Date.now() + 86400000), loc.lat, loc.lng, {
+          methodId: settings.methodId,
+          asrJuristic: settings.asrJuristic,
+          highLatitudeRule: settings.highLatitudeRule,
+          adjustments: settings.adjustments,
+          dhuhrOffsetMinutes: settings.dhuhrOffsetMinutes,
+        });
+        await reschedulePrayerNotifications(times, tomorrow, settings);
+      } catch { /* notifications are best-effort */ }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loc?.lat, loc?.lng, settings.methodId, settings.asrJuristic, settings.highLatitudeRule, JSON.stringify(settings.adjustments), settings.dhuhrOffsetMinutes, JSON.stringify(settings.notifications), settings.azanSound, settings.quietFrom, settings.quietTo, settings.fajrForceWake]);
 
   return (
-    <Screen>
+    <Screen edges={['top']}>
+      {/* Top row: location + bell */}
+      <View style={styles.topRow}>
+        <View style={styles.locRow}>
+          <Text style={{ fontSize: 18 }}>📍</Text>
+          <Text style={[styles.locText, { color: th.text }]} numberOfLines={1}>
+            {loc?.label ?? 'Set location'}
+          </Text>
+        </View>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={[styles.bellBtn, { backgroundColor: th.chip }]}
+          onPress={() => router.push('/(tabs)/more')}
+        >
+          <Text style={{ fontSize: 20 }}>🔔</Text>
+        </TouchableOpacity>
+      </View>
+
       <Scroller>
-        <View style={{ marginTop: 8 }}>
-          <Text style={[styles.bismillah, { color: th.accent }]}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
-          <Sub style={{ textAlign: 'center', marginTop: 4 }}>
-            {formatHijri(hijri, lang)} · {new Date().toLocaleDateString()}
-          </Sub>
+        {/* Date lines */}
+        <View>
+          <Text style={[styles.gregDate, { color: th.text }]}>{dateLabel(today)}</Text>
+          <Text style={[styles.hijriDate, { color: th.sub }]}>
+            {formatHijri(toHijri(today, settings.hijriAdjust), lang)}
+          </Text>
         </View>
 
-        <Card>
-          {times && next ? (
-            <>
-              <Sub>{t('nextPrayer', lang)} · {t(next.name, lang)}</Sub>
-              <Text style={[styles.countdown, { color: th.text }]}>{countdown}</Text>
-              <Text style={[styles.time, { color: th.accent }]}>
-                {formatTime(times[next.name], settings.use24h)}
-              </Text>
-              {!loc ? null : (
-                <Sub style={{ marginTop: 6 }}>📍 {loc.label}</Sub>
-              )}
-            </>
-          ) : (
-            <>
-              <Title>🕌 Noor</Title>
-              <Sub>Set your location to see prayer times.</Sub>
-              <TouchableOpacity
-                style={[styles.cta, { backgroundColor: th.accent }]}
-                onPress={() => router.push('/prayer')}
-              >
-                <Text style={styles.ctaText}>{t('prayer', lang)} →</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </Card>
+        {!loc || !times || !next ? (
+          <Card>
+            <Text style={[styles.cardTitle, { color: th.text }]}>📍 Location</Text>
+            <Sub style={{ marginBottom: 12 }}>Set your location for accurate prayer times</Sub>
+            <PrimaryButton label="Set location" onPress={() => router.push('/(tabs)/more')} icon="📍" />
+          </Card>
+        ) : (
+          <>
+            <NextPrayerCard
+              name={next.name}
+              at={next.at}
+              prayerTime={formatTime(times[next.name], settings.use24h)}
+              label={t('nextPrayer', lang)}
+            />
+            <PrayerStrip times={times} nextName={next.name} use24h={settings.use24h} />
+          </>
+        )}
 
-        <Card>
-          <Sub>{t('ayahOfDay', lang)} — {ayah.surah}:{ayah.n}</Sub>
-          <Text style={[styles.arabic, { color: th.text }]}>{ayah.ar}</Text>
-          <Sub style={{ marginTop: 8 }}>
-            {lang === 'ur' ? ayah.ur : lang === 'hi' ? ayah.hi : ayah.en}
-          </Sub>
-        </Card>
-
-        <Card>
-          <Sub>{t('hadithOfDay', lang)}</Sub>
-          <Text style={[styles.arabic, { color: th.text, fontSize: 18 }]}>{hadith.ar}</Text>
-          <Sub style={{ marginTop: 8 }}>{hadith.en}</Sub>
-          <Sub style={{ marginTop: 4, fontStyle: 'italic' }}>— {hadith.ref}</Sub>
-        </Card>
-
-        <View style={styles.grid}>
-          {quickLinks.map(q => (
-            <TouchableOpacity
-              key={q.route}
-              style={[styles.tile, { backgroundColor: th.card, borderColor: th.border }]}
-              onPress={() => router.push(q.route as any)}
-            >
-              <Text style={{ fontSize: 26 }}>{q.icon}</Text>
-              <Text style={{ color: th.text, fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 6 }}>
-                {q.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <AyahCard th={th} />
+        <QuickActions th={th} />
+        <FeaturesGrid th={th} />
       </Scroller>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  bismillah: { fontSize: 22, textAlign: 'center', fontWeight: '700' },
-  countdown: { fontSize: 44, fontWeight: '800', letterSpacing: 2, marginTop: 4 },
-  time: { fontSize: 18, fontWeight: '700', marginTop: 2 },
-  arabic: { fontSize: 20, lineHeight: 38, textAlign: 'right', writingDirection: 'rtl', marginTop: 8 },
-  cta: { borderRadius: 12, padding: 12, marginTop: 12, alignItems: 'center' },
-  ctaText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tile: { width: '31%', borderRadius: 14, padding: 12, borderWidth: 1, alignItems: 'center' },
+  topRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 10,
+  },
+  locRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, marginRight: 12 },
+  locText: { fontSize: 16, fontFamily: FONTS.bodySemi },
+  bellBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  gregDate: { fontSize: 20, fontFamily: FONTS.bodySemi },
+  hijriDate: { fontSize: 14, fontFamily: FONTS.body, marginTop: 2 },
+  cardTitle: { fontSize: 17, fontFamily: FONTS.bodySemi, marginBottom: 10 },
+  nextCard: { padding: 20 },
+  nextLabel: { fontSize: 13, fontFamily: FONTS.bodySemi, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6 },
+  nextRow: { flexDirection: 'row', alignItems: 'center' },
+  countdown: { fontSize: 30, fontFamily: FONTS.bodyBold, letterSpacing: 0.5 },
+  nextTime: { fontSize: 14, fontFamily: FONTS.body, marginTop: 6 },
+  moonCircle: { width: 84, height: 84, borderRadius: 42, alignItems: 'center', justifyContent: 'center' },
+  strip: { flexDirection: 'row', gap: 8 },
+  stripItem: {
+    flex: 1, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 4,
+    alignItems: 'center', gap: 4,
+  },
+  stripName: { fontSize: 12, fontFamily: FONTS.bodySemi },
+  stripTime: { fontSize: 11, fontFamily: FONTS.body },
+  ayahEn: { fontSize: 15, lineHeight: 23, fontFamily: FONTS.body, marginTop: 12, fontStyle: 'italic' },
+  ayahRef: { fontSize: 13, fontFamily: FONTS.bodyMedium, marginTop: 8 },
+  quickRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 4 },
+  quickItem: { alignItems: 'center', gap: 8, minWidth: 64 },
+  quickCircle: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center' },
+  quickLabel: { fontSize: 13, fontFamily: FONTS.bodyMedium },
+  featGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  featItem: {
+    width: '31%', borderRadius: 16, borderWidth: 1,
+    paddingVertical: 14, alignItems: 'center', gap: 6,
+  },
+  featLabel: { fontSize: 12, fontFamily: FONTS.bodyMedium, textAlign: 'center' },
 });

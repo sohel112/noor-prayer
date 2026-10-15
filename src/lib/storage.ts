@@ -11,6 +11,7 @@ const KEYS = {
   tasbih: 'noor.tasbih.v1',
   prayerLog: 'noor.prayerlog.v1', // { 'YYYY-MM-DD': { fajr: true, ... } }
   qada: 'noor.qada.v1',           // { fajr: n, dhuhr: n, ... } missed counts
+  uzrDays: 'noor.uzrdays.v1',     // { 'YYYY-MM-DD': true } — excused days (e.g. menstruation); don't break streak
   fasting: 'noor.fasting.v1',     // { 'YYYY-MM-DD': 'shawwal' | 'monday' | ... }
   dhikrGoals: 'noor.dhikrgoals.v1',
   favorites: 'noor.favorites.v1', // dua ids
@@ -19,6 +20,10 @@ const KEYS = {
   hijriAdjust: 'noor.hijriadjust.v1',
   onboarded: 'noor.onboarded.v1',
   backup: 'noor.backup.v1',
+  azanSetupDismissed: 'noor.azansetupdismissed.v1',
+  syncMeta: 'noor.syncmeta.v1', // { lastSync, lastError } for cloud backup
+  notifPrefs: 'noor.notifprefs.v1', // { prayerAlerts, adhan, dailyReminder, ... }
+  fontSize: 'noor.fontsize.v1', // 'small' | 'medium' | 'large'
 } as const;
 
 export type StorageKey = keyof typeof KEYS;

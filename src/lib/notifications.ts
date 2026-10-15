@@ -39,13 +39,16 @@ export async function setupNotificationCategories(): Promise<void> {
     try {
       // Clean up legacy channels (they had wrong/no sound).
       // NOTE: Android channels are IMMUTABLE — sound can't be changed after
-      // creation. We delete s1/s2 too so they get recreated with the correct
-      // sound file. This runs on every app start, so it's safe.
-      for (const old of ['prayer-azan', 'prayer-azan-v1', 'prayer-azan-v2', 'prayer-azan-s1', 'prayer-azan-s2']) {
+      // creation. We delete ALL old channel IDs so they get recreated fresh.
+      // v2 channels are used going forward (see getAzanChannelId).
+      for (const old of [
+        'prayer-azan', 'prayer-azan-v1', 'prayer-azan-v2',
+        'prayer-azan-s1', 'prayer-azan-s2',
+      ]) {
         try { await Notifications.deleteNotificationChannelAsync(old); } catch { /* ignore */ }
       }
-      // Channel for azan1 (default)
-      await Notifications.setNotificationChannelAsync('prayer-azan-s1', {
+      // Channel for azan1 (default) — v2 ID ensures fresh creation.
+      await Notifications.setNotificationChannelAsync('prayer-azan-s1-v2', {
         name: 'Prayer Azan',
         importance: Notifications.AndroidImportance.MAX,
         sound: 'azan', // res/raw/azan.ogg (no extension)
@@ -57,8 +60,8 @@ export async function setupNotificationCategories(): Promise<void> {
           contentType: Notifications.AndroidAudioContentType.SONIFICATION,
         },
       });
-      // Channel for azan2
-      await Notifications.setNotificationChannelAsync('prayer-azan-s2', {
+      // Channel for azan2 — v2 ID ensures fresh creation.
+      await Notifications.setNotificationChannelAsync('prayer-azan-s2-v2', {
         name: 'Prayer Azan (Alt)',
         importance: Notifications.AndroidImportance.MAX,
         sound: 'azan2', // res/raw/azan2.ogg (no extension)
@@ -79,8 +82,10 @@ export async function setupNotificationCategories(): Promise<void> {
 
 /** Get the Android channel ID matching the user's azan sound setting. */
 export function getAzanChannelId(azanSound: string): string {
-  if (azanSound === 'azan2') return 'prayer-azan-s2';
-  return 'prayer-azan-s1'; // default 'azan'
+  // v2: bumped to force fresh channel creation (old channels had no/wrong sound
+  // and Android channels are immutable).
+  if (azanSound === 'azan2') return 'prayer-azan-s2-v2';
+  return 'prayer-azan-s1-v2'; // default 'azan'
 }
 
 /**

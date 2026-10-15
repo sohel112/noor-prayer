@@ -1,9 +1,12 @@
 // Notifications preferences — each toggle persisted to AsyncStorage ('notifPrefs' JSON).
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import { router } from 'expo-router';
+import * as ExpoNotifications from 'expo-notifications';
 import { Screen, Scroller, Card, Sub, ToggleRow, TopBar, PrimaryButton, SectionTitle } from '../components/ui';
 import { getJSON, setJSON } from '../lib/storage';
+import { getAzanChannelId, setupNotificationCategories } from '../lib/notifications';
+import { useSettings } from '../lib/settings';
 
 interface NotifPrefs {
   prayerAlerts: boolean;
@@ -34,12 +37,50 @@ const ROWS: { key: keyof NotifPrefs; label: string; hint: string; icon: string }
 
 export default function Notifications() {
   const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULTS);
+  const [channels, setChannels] = useState<any[]>([]);
+  const [testStatus, setTestStatus] = useState<string>('');
+  const { settings } = useSettings();
 
   useEffect(() => {
     getJSON<NotifPrefs>('notifPrefs', DEFAULTS).then(saved => {
       setPrefs({ ...DEFAULTS, ...saved });
     });
+    loadChannels();
   }, []);
+
+  const loadChannels = async () => {
+    if (Platform.OS !== 'android') return;
+    try {
+      await setupNotificationCategories();
+      const list = await ExpoNotifications.getNotificationChannelsAsync();
+      setChannels(list ?? []);
+    } catch (e) {
+      setTestStatus('Channel load failed: ' + String(e));
+    }
+  };
+
+  const testAzan = async () => {
+    setTestStatus('Scheduling test azan in 10 seconds...');
+    try {
+      const channelId = getAzanChannelId(settings.azanSound);
+      await ExpoNotifications.scheduleNotificationAsync({
+        content: {
+          title: '🕌 TEST AZAN',
+          body: 'If you hear azan sound, it works!',
+          data: { kind: 'test-azan' },
+          priority: ExpoNotifications.AndroidNotificationPriority.MAX,
+        },
+        trigger: {
+          type: ExpoNotifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 10,
+          ...(Platform.OS === 'android' ? { channelId } : {}),
+        },
+      });
+      setTestStatus(`Test scheduled! Channel: ${channelId}. Wait 10 sec — app ko background me rakho.`);
+    } catch (e) {
+      setTestStatus('Test failed: ' + String(e));
+    }
+  };
 
   const set = (key: keyof NotifPrefs, value: boolean) => {
     setPrefs(prev => {
@@ -65,6 +106,27 @@ export default function Notifications() {
               onChange={v => set(r.key, v)}
             />
           ))}
+        </Card>
+
+        <Card>
+          <SectionTitle>🔊 Azan Sound Test</SectionTitle>
+          <Sub>
+            Ye diagnostic batayega ki azan channel sahi bana hai ya nahi.
+          </Sub>
+          {channels.map(c => (
+            <View key={c.id} style={{ marginTop: 8, padding: 8, backgroundColor: '#f0f0f0', borderRadius: 8 }}>
+              <Sub>Channel: {c.id}</Sub>
+              <Sub>Sound: {c.sound ?? 'DEFAULT (koi custom sound nahi!)'}</Sub>
+              <Sub>Importance: {c.importance}</Sub>
+            </View>
+          ))}
+          {testStatus ? <View style={{ marginTop: 8 }}><Sub>{testStatus}</Sub></View> : null}
+          <View style={{ marginTop: 12, flexDirection: 'row', gap: 8 }}>
+            <PrimaryButton label="Refresh Channels" onPress={loadChannels} />
+          </View>
+          <View style={{ marginTop: 8 }}>
+            <PrimaryButton label="🔊 Test Azan (10 sec)" onPress={testAzan} />
+          </View>
         </Card>
 
         <Card>

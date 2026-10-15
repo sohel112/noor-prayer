@@ -131,6 +131,12 @@ export default function Mosques() {
     Linking.openURL(`https://www.openstreetmap.org/?mlat=${m.lat}&mlon=${m.lng}#map=16/${m.lat}/${m.lng}`);
   };
 
+  const openGoogleMaps = () => {
+    if (!loc) return;
+    // Google Maps mosque search near user location — better coverage in India.
+    Linking.openURL(`https://www.google.com/maps/search/mosque/@${loc.lat},${loc.lng},14z`);
+  };
+
   return (
     <Screen>
       <Scroller>
@@ -145,6 +151,13 @@ export default function Mosques() {
             </TouchableOpacity>
             {loading ? <ActivityIndicator style={{ marginTop: 12 }} color={th.accent} /> : null}
             {error ? <Sub style={{ marginTop: 8 }}>{error}</Sub> : null}
+            {/* Google Maps fallback — better mosque coverage in many areas */}
+            <TouchableOpacity
+              style={[styles.cta, { backgroundColor: th.primary, marginTop: 12 }]}
+              onPress={openGoogleMaps}
+            >
+              <Text style={[styles.ctaText, { color: '#FFFFFF' }]}>🗺️ Search mosques in Google Maps</Text>
+            </TouchableOpacity>
           </Card>
         )}
         {results.map((m, i) => (

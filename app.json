@@ -16,7 +16,11 @@
         "SCHEDULE_EXACT_ALARM",
         "USE_EXACT_ALARM",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
       "predictiveBackGestureEnabled": false
     },
@@ -64,10 +68,12 @@
           "android": {
             "enableProguardInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true,
-            "extraProguardRules": "-keep class com.noor.prayer.** { *; }\n-keep class expo.modules.** { *; }"
+            "extraProguardRules": "-keep class com.noor.prayer.** { *; }\n-keep class expo.modules.** { *; }\n-keep class com.noor.inmobi.** { *; }\n-keep class com.inmobi.** { *; }\n-dontwarn com.inmobi.**",
+            "enableMinifyInReleaseBuilds": true
           }
         }
-      ]
+      ],
+      "./plugins/withAzanSounds.js"
     ],
     "scheme": "noor",
     "slug": "noor-prayer",
@@ -78,12 +84,12 @@
     },
     "extra": {
       "router": {},
-      "eas": {
-        "projectId": "b3caa7ff-44a5-4691-9abb-7c137ad88d81"
-      },
       "supabaseUrl": "https://vyrivhtxvdxfqliegpfr.supabase.co",
-      "supabaseAnonKey": "sb_publishable_u-2_q238CPH6Z1LR_1Z1Gg_6751WY_I"
+      "supabaseAnonKey": "sb_publishable_u-2_q238CPH6Z1LR_1Z1Gg_6751WY_I",
+      "eas": {
+        "projectId": "73dd85f5-3417-48f6-9374-686ccb7ba1af"
+      }
     },
-    "owner": "sohail112"
+    "owner": "sohel113"
   }
 }

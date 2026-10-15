@@ -112,9 +112,15 @@ export default function Qibla() {
   const [refreshMsg, setRefreshMsg] = useState('');
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Animated rotation value — updates the dial WITHOUT React re-renders (no lag).
-  const dialAnim = useRef(new Animated.Value(0)).current;
+  const dialAnimRef = useRef<Animated.Value | null>(null);
+  if (dialAnimRef.current === null) dialAnimRef.current = new Animated.Value(0);
+  const dialAnim = dialAnimRef.current;
   // Throttle text updates: only re-render when heading changes by 2°+.
   const lastTextHeading = useRef(0);
+  // 60fps smoothing: sensor writes target, rAF loop eases the dial toward it.
+  const targetDial = useRef(0);
+  const currentDial = useRef(0);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     let sub: { remove: () => void } | null = null;
@@ -122,24 +128,37 @@ export default function Qibla() {
     // the raw magnetometer triggers Android's system calibration screen.
     DeviceMotion.isAvailableAsync().then(ok => {
       if (!ok) { setAvailable(false); return; }
-      DeviceMotion.setUpdateInterval(200);
+      DeviceMotion.setUpdateInterval(30);
       sub = DeviceMotion.addListener(data => {
         const r = data.rotation;
         if (!r) return;
         // alpha = compass heading (0 = north), in radians
         const h = (r.alpha * 180) / Math.PI;
         const norm = (h + 360) % 360;
-        // Smooth dial rotation on the native thread — zero React re-render.
-        dialAnim.setValue(-norm);
-        // Update text only when it meaningfully changed (saves re-renders).
-        if (Math.abs(norm - lastTextHeading.current) >= 2) {
-          lastTextHeading.current = norm;
-          setHeading(norm);
-        }
+        targetDial.current = -norm;
       });
     });
+    // Buttery 60fps loop — eases dial toward sensor target (shortest path).
+    const tick = () => {
+      const target = targetDial.current;
+      const cur = currentDial.current;
+      let diff = target - cur;
+      diff = ((diff + 540) % 360) - 180; // shortest rotation
+      const next = cur + diff * 0.3;
+      currentDial.current = next;
+      dialAnim.setValue(next);
+      // Update text only when it meaningfully changed (saves re-renders).
+      const normHeading = ((-next % 360) + 360) % 360;
+      if (Math.abs(normHeading - lastTextHeading.current) >= 2) {
+        lastTextHeading.current = normHeading;
+        setHeading(normHeading);
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
     return () => {
       sub?.remove();
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
     };
   }, []);
@@ -149,9 +168,9 @@ export default function Qibla() {
     if (refreshing) return;
     setRefreshing(true);
     setRefreshMsg('');
-    DeviceMotion.setUpdateInterval(100); // read the sensor faster for 2s
+    DeviceMotion.setUpdateInterval(16); // read the sensor faster for 2s
     refreshTimer.current = setTimeout(() => {
-      DeviceMotion.setUpdateInterval(200);
+      DeviceMotion.setUpdateInterval(30);
       setRefreshing(false);
       setRefreshMsg('Compass refreshed ✓');
     }, 2000);

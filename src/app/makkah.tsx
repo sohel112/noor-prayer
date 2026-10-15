@@ -14,6 +14,7 @@ import { Screen, Card, Title, Sub, useTheme, PrimaryButton } from '../components
 import { useSettings } from '../lib/settings';
 import { FONTS } from '../lib/theme';
 import { t } from '../lib/i18n';
+import { AdBanner } from '../components/AdBanner';
 
 // Desktop Chrome UA — often bypasses the mobile-embed restrictions (Error 153).
 const DESKTOP_UA =
@@ -24,7 +25,7 @@ const DESKTOP_UA =
 // to fetch a fresh list from the config URL below, falling back to this
 // hardcoded list if the fetch fails (offline, etc.).
 const REMOTE_STREAMS_URL =
-  'https://raw.githubusercontent.com/sohel112/noor-prayer/master/streams.json';
+  'https://raw.githubusercontent.com/sohel112/noor-prayer/main/streams.json';
 
 const FALLBACK_STREAMS = [
   { id: 'eC4LfEVxvKg', label: 'Stream 1' },
@@ -187,6 +188,7 @@ export default function Makkah() {
         <Sub style={{ marginTop: 10, textAlign: 'center' }}>
           Note: YouTube may show its own ads in the player.
         </Sub>
+        <AdBanner />
       </View>
     </Screen>
   );

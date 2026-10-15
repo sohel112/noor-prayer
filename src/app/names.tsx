@@ -4,6 +4,7 @@ import { Screen, Scroller, Card, Title, Sub, useTheme } from '../components/ui';
 import { useSettings } from '../lib/settings';
 import { t } from '../lib/i18n';
 import { NAMES_99 } from '../data/names99';
+import { AdBanner } from '../components/AdBanner';
 
 export default function Names() {
   const { settings } = useSettings();
@@ -36,6 +37,7 @@ export default function Names() {
             <Text style={{ color: th.text, fontSize: 24 }}>{n.ar}</Text>
           </Card>
         ))}
+        <AdBanner />
       </Scroller>
     </Screen>
   );

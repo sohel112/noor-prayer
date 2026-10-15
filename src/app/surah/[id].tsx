@@ -11,6 +11,7 @@ import { juzOfSurah } from '../../data/juz';
 import { RECITERS, ayahAudioUrl } from '../../lib/audioSource';
 import { getJSON, setJSON } from '../../lib/storage';
 import quranData from '../../../assets/data/quran.json';
+import { recordReadingDay } from '../../lib/readingStreak';
 import tafsirData from '../../../assets/data/tafsir.json';
 
 interface Verse { n: number; ar: string; en: string; ur: string; hi: string; }
@@ -86,6 +87,8 @@ function ReaderBody({ surahNum, ayahParam }: { surahNum: number; ayahParam?: str
 
   useEffect(() => {
     setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true }).catch(() => {});
+    // Track Quran reading day for the streak.
+    recordReadingDay();
   }, []);
 
   // stop audio when leaving the screen (remount resets the rest via key)

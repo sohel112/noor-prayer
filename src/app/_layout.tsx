@@ -3,6 +3,7 @@ import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { trackAppOpen } from '../lib/analytics';
 import { useFonts } from 'expo-font';
 import {
   PlayfairDisplay_700Bold,
@@ -20,7 +21,7 @@ import Onboarding from '../components/Onboarding';
 import Splash from '../components/Splash';
 import { RootErrorBoundary } from '../components/RootErrorBoundary';
 import { getJSON } from '../lib/storage';
-import { playAzan, stopAzan } from '../lib/azanPlayer';
+import { playAzan, stopAzan, type AzanId } from '../lib/azanPlayer';
 import { checkAppIntegrity, shouldAllowCloudSync } from '../lib/security';
 
 function Inner() {
@@ -32,6 +33,8 @@ function Inner() {
   const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
+    // Analytics: track app open for DAU (privacy-first, opt-out in Settings).
+    trackAppOpen();
     getJSON('onboarded', false).then(v => {
       setOnboarded(!!v);
       setChecked(true);
@@ -45,16 +48,26 @@ function Inner() {
     }).catch(() => {});
   }, []);
 
-  // Azan auto-play: when a prayer notification arrives while the app is open,
-  // or the user taps it / taps "Play azan", play the azan sound.
+  // Azan auto-play: the azan now plays as the notification SOUND itself
+  // (bundled via withAzanSounds plugin), so it rings even when the app is
+  // killed — no tap needed. The in-app player is only for manual replay.
   // Force-wake Fajr notifications open the full-screen alarm instead.
   useEffect(() => {
+    const azanId = (): AzanId => settings.azanSound === 'azan2' ? 'azan2' : 'azan1';
     const maybePlay = (data: any) => {
-      if (data?.kind === 'prayer-azan' && data?.playAzan) {
-        playAzan();
+      // Notification sound handles auto-play now — skip in-app to avoid double audio.
+      // Fajr force-wake: auto-open the full-screen alarm when the
+      // notification ARRIVES (no tap needed) — azan starts immediately.
+      if (data?.kind === 'fajr-force-wake') {
+        try { router.push('/fajr-alarm'); } catch { /* ignore */ }
       }
     };
     const maybeAlarm = (data: any) => {
+      if (data?.kind === 'fajr-force-wake') {
+        // Open the full-screen Fajr alarm screen (plays azan).
+        try { router.push('/fajr-alarm'); } catch { /* ignore */ }
+        return true;
+      }
       if (data?.kind === 'prayer-azan' && data?.forceWake) {
         // Open the full-screen Fajr alarm screen.
         try { router.push('/fajr-alarm'); } catch { /* ignore */ }
@@ -75,17 +88,18 @@ function Inner() {
       }
       if (action === 'PLAY_AZAN') {
         // User explicitly asked to (re)play the azan.
-        playAzan();
+        playAzan(azanId());
         return;
       }
-      // Tapping the notification body: open the app, leave azan playing as-is.
+      // Tapping the notification body: just open the app.
+      // The azan already played as the notification sound; no replay needed.
       maybeAlarm(data);
     });
     return () => {
       notifListener.current?.remove();
       responseListener.current?.remove();
     };
-  }, []);
+  }, [settings.azanSound]);
 
   const [fontsLoaded] = useFonts({
     PlayfairDisplay_700Bold,

@@ -28,7 +28,7 @@ export default function YourData() {
     setLastSync(b ? JSON.parse(b).lastSync ?? null : null);
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { queueMicrotask(refresh); }, []);
 
   const exportData = async () => {
     const pairs = await AsyncStorage.multiGet(keys);

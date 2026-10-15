@@ -6,7 +6,7 @@ import { useSettings, Lang, ThemeMode, DEFAULT_SETTINGS } from '../lib/settings'
 import { t, LANGS } from '../lib/i18n';
 import { PRAYER_METHODS } from '../lib/prayerTimes';
 import { setJSON } from '../lib/storage';
-import { playAzan } from '../lib/azanPlayer';
+import { playAzan, AZAN_OPTIONS } from '../lib/azanPlayer';
 import { requestBatteryExemption } from '../lib/notifications';
 import { useAuth } from '../lib/auth';
 import { getSyncMeta, syncAll, type SyncMeta } from '../lib/sync';
@@ -217,14 +217,27 @@ export default function Settings() {
               { v: 'silent', label: 'Silent (vibration)' },
             ]}
             value={settings.azanSound === 'silent' ? 'silent' : 'default'}
-            onPick={v => update({ azanSound: v })}
+            onPick={v => update({ azanSound: v === 'silent' ? 'silent' : 'azan1' })}
           />
+          {settings.azanSound !== 'silent' ? (
+            <>
+              <Sub style={{ marginTop: 12 }}>Azan voice</Sub>
+              <Seg
+                options={AZAN_OPTIONS.map(a => ({ v: a.id, label: a.name }))}
+                value={settings.azanSound === 'azan2' ? 'azan2' : 'azan1'}
+                onPick={v => update({ azanSound: v })}
+              />
+              <Sub style={{ marginTop: 4, fontSize: 12 }}>
+                {AZAN_OPTIONS.find(a => a.id === (settings.azanSound === 'azan2' ? 'azan2' : 'azan1'))?.credit}
+              </Sub>
+            </>
+          ) : null}
           <Sub style={{ marginTop: 6 }}>
             When a prayer alert arrives, Deen plays the azan automatically.
           </Sub>
           <TouchableOpacity
             style={[styles.testBtn, { backgroundColor: th.accentSoft, borderColor: th.accent }]}
-            onPress={() => playAzan()}
+            onPress={() => playAzan(settings.azanSound === 'azan2' ? 'azan2' : 'azan1')}
           >
             <Text style={{ color: th.accent, fontWeight: '700' }}>🔊 Test azan sound</Text>
           </TouchableOpacity>

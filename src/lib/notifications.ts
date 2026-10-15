@@ -5,6 +5,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { PrayerTimes } from './prayerTimes';
 import { Settings } from './settings';
+import { DAILY_DUAS } from '../data/dailyDuas';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -131,7 +132,7 @@ export async function reschedulePrayerNotifications(
               : silent
                 ? 'It is time for prayer.'
                 : 'Tap to open Deen — azan will play.',
-            sound: silent && !forceWake ? undefined : 'default',
+            sound: silent && !forceWake ? undefined : (settings.azanSound === 'azan2' ? 'azan2' : 'azan'),
             categoryIdentifier: 'prayer-azan',
             // Payload lets the app auto-play azan when the notification is tapped.
             data: { kind: 'prayer-azan', prayer: key, playAzan: !silent || forceWake, forceWake },
@@ -156,6 +157,38 @@ export async function reschedulePrayerNotifications(
         }
       }
     }
+    // Dua of the Day — scheduled after the cancel-all above so it survives.
+    await scheduleDuaOfDay();
+  } catch {
+    // notifications unavailable — app keeps working
+  }
+}
+
+/**
+ * Dua of the Day: a daily 8:00 AM notification with a dua that rotates
+ * by day-of-year through 30 short duas. Zero cost, fully on-device.
+ */
+export async function scheduleDuaOfDay(): Promise<void> {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') return;
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 0);
+    const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000);
+    const dua = DAILY_DUAS[dayOfYear % DAILY_DUAS.length];
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '🤲 Dua of the Day',
+        body: `${dua.en} (${dua.ref})`,
+        data: { kind: 'dua-of-day', ar: dua.ar, ref: dua.ref },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: 8,
+        minute: 0,
+      },
+      identifier: 'noor-dua-of-day',
+    });
   } catch {
     // notifications unavailable — app keeps working
   }

@@ -5,6 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEYS = {
   settings: 'noor.settings.v1',
+  analytics_install_id: 'noor.analytics_install_id.v1',
+  analytics_opt_out: 'noor.analytics_opt_out.v1',
   location: 'noor.location.v1',
   bookmarks: 'noor.bookmarks.v1',
   lastRead: 'noor.lastread.v1',
@@ -24,6 +26,9 @@ const KEYS = {
   syncMeta: 'noor.syncmeta.v1', // { lastSync, lastError } for cloud backup
   notifPrefs: 'noor.notifprefs.v1', // { prayerAlerts, adhan, dailyReminder, ... }
   fontSize: 'noor.fontsize.v1', // 'small' | 'medium' | 'large'
+  fajrAlarm: 'noor.fajralarm.v1', // { enabled, hour, minute }
+  readingStreak: 'noor.readingStreak.v1', // { dates: string[] } YYYY-MM-DD Quran reading days
+  hifzRev: 'noor.hifzrev.v1', // { 's': 'YYYY-MM-DD' } last revision date per surah
 } as const;
 
 export type StorageKey = keyof typeof KEYS;

@@ -26,7 +26,7 @@ export const PRAYER_METHODS: PrayerMethod[] = [
   { id: 'mwl', name: 'Muslim World League', fajrAngle: 18, ishaAngle: 17 },
   { id: 'isna', name: 'ISNA (North America)', fajrAngle: 15, ishaAngle: 15 },
   { id: 'egypt', name: 'Egyptian General Authority', fajrAngle: 19.5, ishaAngle: 17.5 },
-  { id: 'karachi', name: 'Univ. of Islamic Sciences, Karachi', fajrAngle: 18, ishaAngle: 18 },
+  { id: 'karachi', name: 'South Asia (Hanafi)', fajrAngle: 18, ishaAngle: 18 },
   { id: 'tehran', name: 'Institute of Geophysics, Tehran', fajrAngle: 17.7, ishaAngle: 14, maghribAngle: 4.5 },
   { id: 'jafari', name: "Jafari (Ithna Ashari)", fajrAngle: 16, ishaAngle: 14, maghribAngle: 4 },
 ];

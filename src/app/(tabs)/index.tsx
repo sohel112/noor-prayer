@@ -5,6 +5,7 @@ import React, { memo, useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, Scroller, Card, useTheme, Heading, Sub, PrimaryButton, Arabic } from '../../components/ui';
+import { AdBanner } from '../../components/AdBanner';
 import { useSettings } from '../../lib/settings';
 import { t } from '../../lib/i18n';
 import { useLocation } from '../../lib/location';
@@ -107,17 +108,44 @@ const PrayerStrip = memo(function PrayerStrip({ times, nextName, use24h }: {
   times: PrayerTimes; nextName: PrayerName; use24h: boolean;
 }) {
   const th = useTheme();
+  const { settings, update } = useSettings();
+
+  const toggleAzan = (name: PrayerName) => {
+    const next = {
+      ...settings.notifications,
+      [name]: !settings.notifications[name],
+    };
+    update({ notifications: next });
+    // Re-schedule notifications so the change takes effect immediately.
+    reschedulePrayerNotifications(times, times, { ...settings, notifications: next }).catch(() => {});
+  };
+
   return (
     <View style={styles.strip}>
       {PRAYER_ORDER.map(name => {
         const isNext = name === nextName;
+        const azanOn = settings.notifications[name] !== false;
         return (
           <View key={name} style={[styles.stripItem, isNext && { backgroundColor: th.primary }]}>
             <Text style={{ fontSize: 20 }}>{PRAYER_ICONS[name]}</Text>
             <Text style={[styles.stripName, { color: isNext ? '#FFFFFF' : th.text }]}>{tName(name)}</Text>
-            <Text style={[styles.stripTime, { color: isNext ? '#FFFFFF' : th.sub, fontVariant: ['tabular-nums'] }]}>
+            <Text
+              style={[styles.stripTime, { color: isNext ? '#FFFFFF' : th.sub, fontVariant: ['tabular-nums'] }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
               {formatTime(times[name], use24h)}
             </Text>
+            <TouchableOpacity
+              onPress={() => toggleAzan(name)}
+              activeOpacity={0.6}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={{ fontSize: 15, opacity: azanOn ? 1 : 0.35 }}>
+                {azanOn ? '🔔' : '🔕'}
+              </Text>
+            </TouchableOpacity>
           </View>
         );
       })}
@@ -125,8 +153,45 @@ const PrayerStrip = memo(function PrayerStrip({ times, nextName, use24h }: {
   );
 });
 
-const AyahCard = memo(function AyahCard({ th }: { th: Theme }) {
-  const ayah = useMemo(() => ayahOfTheDay(), []);
+/** Days until the next big occasion: Ramadan, Eid al-Fitr, or Eid al-Adha (approx). */
+const OccasionCountdown = memo(function OccasionCountdown({ hijriAdjust }: { hijriAdjust: number }) {
+  const th = useTheme();
+  const info = useMemo(() => {
+    const now = toHijri(new Date(), hijriAdjust);
+    const occasions = [
+      { month: 9, day: 1, icon: '🌙', label: 'Ramadan' },
+      { month: 10, day: 1, icon: '🎉', label: 'Eid al-Fitr' },
+      { month: 12, day: 10, icon: '🕋', label: 'Eid al-Adha' },
+    ];
+    let best: { icon: string; label: string; days: number } | null = null;
+    for (const o of occasions) {
+      let months = o.month - now.month;
+      if (months < 0 || (months === 0 && o.day <= now.day)) months += 12;
+      const days = Math.max(0, Math.round(months * 29.53 + (o.day - now.day)));
+      if (!best || days < best.days) best = { icon: o.icon, label: o.label, days };
+    }
+    return best;
+  }, [hijriAdjust]);
+
+  if (!info) return null;
+  return (
+    <Card>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Text style={{ fontSize: 34 }}>{info.icon}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: th.text, fontSize: 17, fontFamily: FONTS.bodySemi }}>
+            {info.days === 0
+              ? `${info.label} Mubarak! 🤲`
+              : `${info.label} in ${info.days} day${info.days === 1 ? '' : 's'}`}
+          </Text>
+          <Sub>Based on the Hijri calendar (approx.)</Sub>
+        </View>
+      </View>
+    </Card>
+  );
+});
+
+const AyahCard = memo(function AyahCard({ th }: { th: Theme }) {  const ayah = useMemo(() => ayahOfTheDay(), []);
   return (
     <Card>
       <Text style={[styles.cardTitle, { color: th.text }]}>✨ {t('ayahOfDay', 'en')}</Text>
@@ -178,8 +243,13 @@ const ALL_FEATURES = [
   // Regular use
   { label: 'Makkah Live', icon: '🕋', route: '/makkah' },
   { label: 'Mosque Finder', icon: '🕌', route: '/mosques' },
+  { label: 'Halal Food', icon: '🍖', route: '/halal-food' },
   { label: 'Ramadan', icon: '🌙', route: '/ramadan' },
-  { label: 'Fajr Alarm', icon: '⏰', route: '/fajr-alarm' },
+  { label: 'Fajr Alarm', icon: '⏰', route: '/fajr-alarm-settings' },
+  // Learning
+  { label: 'Namaz Guide', icon: '🙏', route: '/namaz-guide' },
+  { label: 'Islamic Quiz', icon: '❓', route: '/quiz' },
+  { label: 'Hifz Planner', icon: '🧠', route: '/hifz-planner' },
   // Occasional tools
   { label: 'Zakat Calc', icon: '💰', route: '/zakat' },
   { label: 'Waris Calc', icon: '⚖️', route: '/waris' },
@@ -299,12 +369,14 @@ export default function Home() {
               label={t('nextPrayer', lang)}
             />
             <PrayerStrip times={times} nextName={next.name} use24h={settings.use24h} />
+            <OccasionCountdown hijriAdjust={settings.hijriAdjust} />
           </>
         )}
 
         <AyahCard th={th} />
         <QuickActions th={th} />
         <FeaturesGrid th={th} />
+        <AdBanner />
       </Scroller>
     </Screen>
   );

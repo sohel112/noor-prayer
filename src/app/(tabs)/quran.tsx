@@ -9,6 +9,7 @@ import { t } from '../../lib/i18n';
 import { SURAHS, type SurahMeta } from '../../data/surahs';
 import { JUZ_STARTS, juzOfSurah, type JuzStart } from '../../data/juz';
 import { getJSON } from '../../lib/storage';
+import { loadReadingDates, calcStreak } from '../../lib/readingStreak';
 
 type Tab = 'surahs' | 'juz' | 'bookmarks';
 
@@ -29,6 +30,7 @@ export default function Quran() {
   const [tab, setTab] = useState<Tab>('surahs');
   const [bookmarks, setBookmarks] = useState<string[]>([]);
   const [lastRead, setLastRead] = useState<{ surah: number; ayah: number } | null>(null);
+  const [streak, setStreak] = useState(0);
 
   const load = useCallback(async () => {
     const b = await getJSON<string[]>('bookmarks', []);
@@ -42,6 +44,8 @@ export default function Quran() {
     } else {
       setLastRead(null);
     }
+    const dates = await loadReadingDates();
+    setStreak(calcStreak(dates));
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -197,6 +201,19 @@ export default function Quran() {
               ) : null}
             </View>
 
+            {/* Reading streak */}
+            <Card style={[styles.streakCard, { backgroundColor: th.accentSoft }]}>
+              <Text style={{ fontSize: 26 }}>🔥</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.streakText, { color: th.text }]}>
+                  {streak > 0 ? `${streak} day streak` : 'Start your streak'}
+                </Text>
+                <Text style={[styles.streakSub, { color: th.sub }]}>
+                  {streak > 0 ? 'Keep reading every day!' : 'Open a surah to begin'}
+                </Text>
+              </View>
+            </Card>
+
             {/* Last Read */}
             {lastMeta && lastRead ? (
               <Card style={styles.lastCard}>
@@ -264,6 +281,9 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 4,
   },
   searchInput: { flex: 1, fontSize: 15, paddingVertical: 12 },
+  streakCard: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  streakText: { fontSize: 16, fontWeight: '800' },
+  streakSub: { fontSize: 13, marginTop: 2 },
   lastCard: { gap: 14 },
   lastRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   cover: {

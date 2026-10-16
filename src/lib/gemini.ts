@@ -5,32 +5,22 @@
  * - Multiple API key rotation (load balancing)
  * - 10 messages per user per day (free tier limit)
  * - Islamic knowledge system prompt
- *
  * NOTE: API keys are provided by the user at runtime.
  * They are NOT stored in code or memory.
  */
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GEMINI_API_KEYS } from './geminiKeys';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase';
 
-// API keys loaded from secure gitignored file
-let API_KEYS: string[] = [...GEMINI_API_KEYS];
-let currentKeyIndex = 0;
+// AI chat now goes through Supabase Edge Function (server-side Gemini key).
+// No client-side API keys needed.
+const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/aideen-chat`;
 
-export function setApiKeys(keys: string[]) {
-  API_KEYS = keys.filter(k => k && k.trim().length > 0);
-  currentKeyIndex = 0;
+export function setApiKeys(_keys: string[]) {
+  // Kept for compatibility — keys are now server-side.
 }
 
 export function hasApiKeys(): boolean {
-  return API_KEYS.length > 0;
-}
-
-function getNextKey(): string | null {
-  if (API_KEYS.length === 0) return null;
-  const key = API_KEYS[currentKeyIndex % API_KEYS.length];
-  currentKeyIndex++;
-  return key;
+  return true; // Backend handles the key
 }
 
 // --- Daily message limit (10 per user per day) ---
@@ -69,20 +59,6 @@ export interface ChatMessage {
   text: string;
 }
 
-const SYSTEM_PROMPT = `You are AiDeen, a helpful Islamic assistant inside the Deen prayer app. Answer questions about Islam accurately and respectfully.
-
-Guidelines:
-- Base answers on Quran and authentic Hadith (Sahih Bukhari, Sahih Muslim)
-- If unsure, say so honestly — never invent hadith or verses
-- Be concise but thorough (2-4 paragraphs max unless asked for more)
-- Support English, Hindi (Roman + Devanagari), and Urdu
-- For fiqh differences, mention major madhhab views briefly
-- Always be respectful of all Muslims
-- Never issue fatwas — for complex rulings, advise consulting a local scholar
-- You can answer about: prayer, fasting, Quran, duas, Islamic history, daily life guidance`;
-
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
-
 export async function sendChatMessage(
   messages: ChatMessage[],
   userMessage: string
@@ -92,70 +68,36 @@ export async function sendChatMessage(
     throw new Error('Daily limit reached (10 messages/day). Try again tomorrow!');
   }
 
-  const apiKey = getNextKey();
-  if (!apiKey) {
-    throw new Error('AI service not configured. Please try again later.');
-  }
+  const allMessages: ChatMessage[] = [...messages.slice(-10), { role: 'user', text: userMessage }];
 
-  // Build conversation history for Gemini
-  const contents = [
-    { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
-    { role: 'model', parts: [{ text: 'Understood. I am AiDeen, ready to help with Islamic questions.' }] },
-    ...messages.slice(-10).map(m => ({
-      role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.text }],
-    })),
-    { role: 'user', parts: [{ text: userMessage }] },
-  ];
+  try {
+    const response = await fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ messages: allMessages }),
+    });
 
-  // Try each key on failure (rotation for resilience)
-  let lastError: Error | null = null;
-  for (let attempt = 0; attempt < API_KEYS.length; attempt++) {
-    const key = getNextKey();
-    if (!key) break;
-
-    try {
-      const response = await fetch(`${GEMINI_API_URL}?key=${key}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1024,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const errText = await response.text().catch(() => '');
-        // 429 = rate limit, try next key
-        if (response.status === 429) continue;
-        throw new Error(`API error ${response.status}: ${errText.slice(0, 100)}`);
-      }
-
-      const data = await response.json();
-      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!reply) throw new Error('Empty response from AI');
-
-      await incrementUsage();
-      const newRemaining = await getRemainingMessages();
-      return { reply: reply.trim(), remaining: newRemaining };
-    } catch (e: any) {
-      lastError = e;
-      // Try next key
-      continue;
+    if (!response.ok) {
+      throw new Error(`AI service error (${response.status})`);
     }
-  }
 
-  throw lastError || new Error('All API keys failed. Please try again later.');
+    const data = await response.json();
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    await incrementUsage();
+    const newRemaining = await getRemainingMessages();
+    return { reply: data.reply || 'Sorry, no response received.', remaining: newRemaining };
+  } catch (e: any) {
+    throw new Error(e.message || 'AI service unavailable. Please try again.');
+  }
 }
 
 export async function resetDailyLimit(): Promise<void> {
-  // For testing only
-  try {
-    await AsyncStorage.removeItem(limitKey());
-  } catch {
-    // ignore
-  }
+  await AsyncStorage.removeItem(limitKey());
 }

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Vibration } from 'react-nativ
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Screen, Scroller, Card, Sub, useTheme, TopBar, SectionTitle,
-  PillTabs, Arabic, Heading,
+  PillTabs, Arabic,
 } from '../../components/ui';
 import { useSettings } from '../../lib/settings';
 import { t } from '../../lib/i18n';
@@ -227,25 +227,29 @@ export default function Duas() {
 
         {tab === TAB_DAILY ? (
           <>
-            {/* Featured morning dua */}
-            <View style={[styles.featured, { backgroundColor: th.primary }]}>
-              <Text style={{ fontSize: 52 }}>🤲</Text>
-              <Heading size={22} style={{ color: '#FFFFFF', marginBottom: 0 }}>Morning Dua</Heading>
-              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, fontFamily: FONTS.body }}>
-                For Blessings &amp; Guidance
-              </Text>
+            {/* Featured dua — premium card */}
+            <View style={[styles.featured, { backgroundColor: '#0B3D2E', borderColor: '#D4AF7C' }]}>
+              <View style={styles.featuredTopRow}>
+                <View style={styles.dayPill}>
+                  <Text style={styles.dayPillText}>✨ DUA OF THE DAY</Text>
+                </View>
+                <Text style={{ fontSize: 28 }}>🤲</Text>
+              </View>
+              <Text style={[styles.featuredTitle, { color: '#FFFFFF' }]}>Morning Dua</Text>
+              <Text style={styles.featuredSubtitle}>For Blessings &amp; Guidance</Text>
+              <View style={styles.featuredDivider} />
+              <Arabic size={18} style={styles.featuredArabic}>{featured.ar}</Arabic>
               <TouchableOpacity
                 onPress={() => toggleExpand(featured.id)}
                 activeOpacity={0.85}
                 style={styles.readBtn}
               >
-                <Text style={{ color: th.primary, fontFamily: FONTS.bodySemi, fontSize: 15 }}>
-                  {featuredExpanded ? 'Hide' : 'Read'}
+                <Text style={{ color: '#0B3D2E', fontFamily: FONTS.bodySemi, fontSize: 15 }}>
+                  {featuredExpanded ? 'Hide ↑' : 'Read Full Dua →'}
                 </Text>
               </TouchableOpacity>
               {featuredExpanded ? (
                 <View style={{ gap: 10, marginTop: 6, width: '100%' }}>
-                  <Arabic size={22} style={{ color: '#FFFFFF' }}>{featured.ar}</Arabic>
                   <Text style={{ color: 'rgba(255,255,255,0.92)', fontSize: 15, lineHeight: 23, fontFamily: FONTS.body }}>
                     {translation}
                   </Text>
@@ -338,13 +342,40 @@ export default function Duas() {
 
 const styles = StyleSheet.create({
   featured: {
-    borderRadius: 20, padding: 22, alignItems: 'center', gap: 8,
-    shadowColor: '#0F6B4F', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25, shadowRadius: 12, elevation: 4,
+    borderRadius: 20, padding: 20, alignItems: 'center',
+    borderWidth: 1.5,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25, shadowRadius: 16, elevation: 4,
+  },
+  featuredTopRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    width: '100%', marginBottom: 12,
+  },
+  dayPill: {
+    backgroundColor: '#D4AF7C', borderRadius: 999,
+    paddingHorizontal: 12, paddingVertical: 6,
+  },
+  dayPillText: {
+    color: '#0B3D2E', fontSize: 11, fontWeight: '700',
+    letterSpacing: 1, fontFamily: FONTS.bodySemi,
+  },
+  featuredTitle: {
+    fontSize: 24, fontWeight: '700', fontFamily: FONTS.heading,
+  },
+  featuredSubtitle: {
+    color: '#D4AF7C', fontSize: 14, fontWeight: '600',
+    fontFamily: FONTS.bodySemi, marginTop: 2,
+  },
+  featuredDivider: {
+    height: 1, width: '40%', backgroundColor: 'rgba(212,175,124,0.4)',
+    borderRadius: 1, marginVertical: 12,
+  },
+  featuredArabic: {
+    color: 'rgba(255,255,255,0.75)', textAlign: 'center', lineHeight: 32,
   },
   readBtn: {
-    backgroundColor: '#FFFFFF', borderRadius: 999, paddingVertical: 10, paddingHorizontal: 34,
-    marginTop: 6,
+    backgroundColor: '#D4AF7C', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20,
+    marginTop: 14, width: '100%', alignItems: 'center',
   },
   duaWrap: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
   duaHead: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },

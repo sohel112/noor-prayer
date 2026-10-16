@@ -8,6 +8,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.noor.prayer",
+      "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",

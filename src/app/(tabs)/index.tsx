@@ -230,11 +230,6 @@ const QuickActions = memo(function QuickActions({ th }: { th: Theme }) {
     </View>
   );
 });
-
-// ---------------------------------------------------------------------------
-// All features grid — most-used first
-// ---------------------------------------------------------------------------
-
 const ALL_FEATURES = [
   // Daily essentials
   { label: 'Prayer Tracker', icon: '✅', route: '/prayer-tracker' },
@@ -247,16 +242,37 @@ const ALL_FEATURES = [
   { label: 'Halal Food', icon: '🍖', route: '/halal-food' },
   { label: 'Ramadan', icon: '🌙', route: '/ramadan' },
   { label: 'Fajr Alarm', icon: '⏰', route: '/fajr-alarm-settings' },
+  // Trackers
+  { label: 'Khatm Tracker', icon: '📖', route: '/khatm-tracker' },
+  { label: 'Sadaqah', icon: '🤲', route: '/sadaqah-tracker' },
+  { label: 'Tahajjud', icon: '⭐', route: '/tahajjud-tracker' },
+  { label: 'Masjid Visits', icon: '🛐', route: '/masjid-visits' },
+  { label: "I'tikaf", icon: '⛺', route: '/itikaf-tracker' },
+  { label: 'Islamic Events', icon: '📅', route: '/islamic-events' },
+  { label: 'Fasting Tracker', icon: '🍽️', route: '/fasting-tracker' },
+  { label: 'Habit Tracker', icon: '📊', route: '/habit-tracker' },
   // Learning
   { label: 'Namaz Guide', icon: '🙏', route: '/namaz-guide' },
   { label: 'Islamic Quiz', icon: '❓', route: '/quiz' },
   { label: 'Hifz Planner', icon: '🧠', route: '/hifz-planner' },
+  { label: 'Quran Search', icon: '🔍', route: '/quran-search' },
+  { label: 'AI Chat', icon: '🤖', route: '/ai-chat' },
+  // Personal
+  { label: 'Gratitude Journal', icon: '📝', route: '/gratitude-journal' },
+  { label: 'Cycle Tracker', icon: '🌸', route: '/cycle-tracker' },
+  { label: 'Prayer Report', icon: '📈', route: '/prayer-report' },
+  { label: 'Flip to Silence', icon: '📵', route: '/flip-to-silence' },
   // Occasional tools
   { label: 'Zakat Calc', icon: '💰', route: '/zakat' },
   { label: 'Waris Calc', icon: '⚖️', route: '/waris' },
   { label: 'Hijri Convert', icon: '🔄', route: '/converter' },
   { label: 'Settings', icon: '⚙️', route: '/settings' },
 ] as const;
+// ---------------------------------------------------------------------------
+// All features grid — most-used first
+// ---------------------------------------------------------------------------
+
+
 
 const FeaturesGrid = memo(function FeaturesGrid({ th }: { th: Theme }) {
   return (

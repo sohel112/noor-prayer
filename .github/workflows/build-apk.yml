@@ -35,14 +35,20 @@ jobs:
       - name: Expo prebuild
         run: npx expo prebuild --platform android --no-install
 
-      - name: Build APK (debug)
+      - name: Build APK (release, debug-signed standalone)
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          # Debug keystore for signing the TEST build (not for Play Store).
+          keytool -genkeypair -v -keystore /tmp/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
+          ./gradlew assembleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file=/tmp/debug.keystore \
+            -Pandroid.injected.signing.store.password=android \
+            -Pandroid.injected.signing.key.alias=androiddebugkey \
+            -Pandroid.injected.signing.key.password=android
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: deen-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: deen-standalone-apk
+          path: android/app/build/outputs/apk/release/app-release.apk

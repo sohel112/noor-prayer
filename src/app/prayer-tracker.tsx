@@ -16,6 +16,25 @@ import { AdBanner } from '../components/AdBanner';
 const PRAYER_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
 type PrayerName = (typeof PRAYER_ORDER)[number];
 
+
+// Sunnah rakats per prayer: [before, after]
+const SUNNAH_RAKATS: Record<PrayerName, { before: number; after: number }> = {
+  fajr: { before: 2, after: 0 },
+  dhuhr: { before: 4, after: 2 },
+  asr: { before: 4, after: 0 },
+  maghrib: { before: 0, after: 2 },
+  isha: { before: 4, after: 2 },
+};
+
+// Nafl prayers (optional)
+const NAFL_PRAYERS = [
+  { id: 'tahajjud', name: 'Tahajjud', icon: '🌙', desc: 'Late night prayer' },
+  { id: 'witr', name: 'Witr', icon: '⭐', desc: '3 rakats after Isha' },
+  { id: 'ishraq', name: 'Ishraq', icon: '🌅', desc: 'After sunrise' },
+  { id: 'chasht', name: 'Chasht (Duha)', icon: '☀️', desc: 'Mid-morning' },
+  { id: 'awwabin', name: 'Awwabin', icon: '🌇', desc: 'After Maghrib' },
+] as const;
+type NaflId = (typeof NAFL_PRAYERS)[number]['id'];
 const PRAYER_ICONS: Record<PrayerName, string> = {
   fajr: '🌙', dhuhr: '☀️', asr: '🌤️', maghrib: '🌇', isha: '🌌',
 };

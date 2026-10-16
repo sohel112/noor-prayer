@@ -92,7 +92,7 @@ export default function AiChat() {
   };
 
   return (
-    <Screen edges={['top']}>
+    <Screen>
       <TopBar
         title="🤖 AiDeen"
         onBack={() => router.back()}
@@ -106,7 +106,7 @@ export default function AiChat() {
       />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={90}
       >
         <FlatList

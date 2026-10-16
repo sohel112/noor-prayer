@@ -19,6 +19,7 @@ import { SettingsProvider, useSettings } from '../lib/settings';
 import { AuthProvider } from '../lib/auth';
 import Onboarding from '../components/Onboarding';
 import Splash from '../components/Splash';
+import { UpdateDialog } from '../components/UpdateDialog';
 import { RootErrorBoundary } from '../components/RootErrorBoundary';
 import { getJSON } from '../lib/storage';
 import { playAzan, stopAzan, type AzanId } from '../lib/azanPlayer';
@@ -29,8 +30,14 @@ function Inner() {
   const [checked, setChecked] = useState(false);
   const [onboarded, setOnboarded] = useState(true);
   const [splashed, setSplashed] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<import('../lib/updateCheck').UpdateInfo | null>(null);
   const notifListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
+
+  // In-app update check: once a day, ask the repo if a newer version is out.
+  useEffect(() => {
+    import('../lib/updateCheck').then(m => m.checkForUpdate()).then(setUpdateInfo).catch(() => {});
+  }, []);
 
   useEffect(() => {
     // Analytics: track app open for DAU (privacy-first, opt-out in Settings).
@@ -156,6 +163,9 @@ function Inner() {
         <Stack.Screen name="surah/[id]" options={{ presentation: 'card' }} />
         <Stack.Screen name="fajr-alarm" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       </Stack>
+      {updateInfo && (
+        <UpdateDialog info={updateInfo} onClose={() => setUpdateInfo(null)} />
+      )}
     </>
   );
 }

@@ -64,7 +64,7 @@
           "android": {
             "enableProguardInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true,
-            "extraProguardRules": "-keep class com.noor.prayer.** { *; }\n-keep class expo.modules.** { *; }\n-keep class com.noor.inmobi.** { *; }\n-keep class com.inmobi.** { *; }\n-dontwarn com.inmobi.**",
+            "extraProguardRules": "-keep class com.noor.prayer.** { *; }\n-keep class expo.modules.** { *; }\n-keep class com.noor.inmobi.** { *; }\n-keep class com.inmobi.** { *; }\n-dontwarn com.inmobi.**\n-dontwarn expo.modules.core.errors.**\n-dontwarn expo.modules.kotlin.types.**",
             "enableMinifyInReleaseBuilds": true
           }
         }

@@ -262,6 +262,7 @@ const ALL_FEATURES = [
   { label: 'Hifz Planner', icon: '🧠', route: '/hifz-planner' },
   { label: 'Quran Search', icon: '🔍', route: '/quran-search' },
   { label: 'AI Chat', icon: '🤖', route: '/ai-chat' },
+  { label: 'Leaderboard', icon: '🏆', route: '/leaderboard' },
   // Personal
   { label: 'Gratitude Journal', icon: '📝', route: '/gratitude-journal' },
   { label: 'Cycle Tracker', icon: '🌸', route: '/cycle-tracker' },

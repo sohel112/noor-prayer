@@ -377,7 +377,7 @@ export default function Home() {
             <Text style={{ fontSize: 20 }}>⚙️</Text>
           </TouchableOpacity>
         </View>
-      </View>gify(settings.adjustments), settings.dhuhrOffsetMinutes, JSON.stringify(settings.notifications), settings.azanSound, settings.quietFrom, settings.quietTo, settings.fajrForceWake]);
+      </View>
 
   return (
     <Screen edges={['top']}>

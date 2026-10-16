@@ -32,6 +32,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create stub for gitignored geminiKeys
+        run: |
+          if [ ! -f src/lib/geminiKeys.ts ]; then
+            echo "export const GEMINI_API_KEYS: string[] = [];" > src/lib/geminiKeys.ts
+          fi
+
       - name: Expo prebuild
         run: npx expo prebuild --platform android --no-install
 

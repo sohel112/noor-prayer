@@ -347,7 +347,8 @@ export default function Home() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loc?.lat, loc?.lng, settings.methodId, settings.asrJuristic, settings.highLatitudeRule, JSON.strin        <View style={{ flexDirection: 'row', gap: 8 }}>
+  }, [loc?.lat, loc?.lng, settings.methodId, settings.asrJuristic, settings.highLatitudeRule, JSON.stringify(settings.adjustments), settings.dhuhrOffsetMinutes, JSON.stringify(settings.notifications), settings.azanSound, settings.quietFrom, settings.quietTo, settings.fajrForceWake]);
+        <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity
             activeOpacity={0.7}
             style={[styles.bellBtn, { backgroundColor: th.chip }]}

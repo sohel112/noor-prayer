@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { trackAppOpen } from '../lib/analytics';
 import { useFonts } from 'expo-font';
@@ -35,6 +35,8 @@ function Inner() {
   useEffect(() => {
     // Analytics: track app open for DAU (privacy-first, opt-out in Settings).
     trackAppOpen();
+    // Home-screen widget: push a fresh snapshot on every app start.
+    import('../lib/widgetSync').then(m => m.syncPrayerWidget(true)).catch(() => {});
     // CRITICAL: Create notification channel with azan sound on EVERY app start.
     // Without this, killed-app notifications use the default channel (no azan sound).
     import('../lib/notifications').then(m => m.setupNotificationCategories()).catch(() => {});
@@ -49,6 +51,16 @@ function Inner() {
       if (r.tampered) console.warn('[security] risk=' + r.riskScore, r.reasons.join(','));
       (globalThis as any).__cloudSyncAllowed = shouldAllowCloudSync(r);
     }).catch(() => {});
+  }, []);
+
+  // Widget: refresh snapshot every time the app comes to the foreground.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        import('../lib/widgetSync').then(m => m.syncPrayerWidget()).catch(() => {});
+      }
+    });
+    return () => sub.remove();
   }, []);
 
   // Azan auto-play: the azan now plays as the notification SOUND itself

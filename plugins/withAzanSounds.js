@@ -7,6 +7,7 @@ const { withDangerousMod } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
+
 module.exports = function withAzanSounds(config) {
   return withDangerousMod(config, [
     'android',
@@ -16,9 +17,11 @@ module.exports = function withAzanSounds(config) {
       const srcDir = path.join(projectRoot, 'assets', 'audio');
       const destDir = path.join(platformRoot, 'app', 'src', 'main', 'res', 'raw');
 
+
       if (!fs.existsSync(destDir)) {
         fs.mkdirSync(destDir, { recursive: true });
       }
+
 
       for (const file of ['azan.mp3', 'azan2.mp3']) {
         const src = path.join(srcDir, file);
@@ -30,6 +33,11 @@ module.exports = function withAzanSounds(config) {
           console.warn(`[withAzanSounds] missing: ${src}`);
         }
       }
+      // keep.xml stops resource shrinker deleting raw azan files
+      const valuesDir = path.join(platformRoot, 'app', 'src', 'main', 'res', 'values');
+      const keepXml = '<?xml version="1.0" encoding="utf-8"?>\n<resources xmlns:tools="http://schemas.android.com/tools"\n    tools:keep="@raw/azan,@raw/azan2" />\n';
+      if (!fs.existsSync(valuesDir)) { fs.mkdirSync(valuesDir, { recursive: true }); }
+      fs.writeFileSync(path.join(valuesDir, 'azan_keep.xml'), keepXml);
       return config;
     },
   ]);

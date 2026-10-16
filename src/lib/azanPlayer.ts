@@ -15,6 +15,7 @@ import { Asset } from 'expo-asset';
 export const AZAN_OPTIONS = [
   { id: 'azan1', name: 'Beautiful Adhan (default)', credit: 'Adam-synagda · CC0' },
   { id: 'azan2', name: 'Adhan — Andrewler', credit: 'Andrewler · Wikimedia Commons' },
+  { id: 'azan3', name: 'Makkah Haram', credit: 'Seyfula Islam · CC BY 3.0' },
 ] as const;
 
 export type AzanId = (typeof AZAN_OPTIONS)[number]['id'];
@@ -22,6 +23,7 @@ export type AzanId = (typeof AZAN_OPTIONS)[number]['id'];
 const azanModules: Record<AzanId, any> = {
   azan1: require('../../assets/audio/azan.ogg'),
   azan2: require('../../assets/audio/azan2.ogg'),
+  azan3: require('../../assets/audio/azan-makkah.mp3'),
 };
 
 async function ensureMode() {

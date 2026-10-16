@@ -348,7 +348,7 @@ export default function Home() {
 
   return (
     <Screen edges={['top']}>
-      {/* Top row: location + bell */}
+      {/* Top row: location + settings */}
       <View style={styles.topRow}>
         <View style={styles.locRow}>
           <Text style={{ fontSize: 18 }}>📍</Text>
@@ -359,9 +359,9 @@ export default function Home() {
         <TouchableOpacity
           activeOpacity={0.7}
           style={[styles.bellBtn, { backgroundColor: th.chip }]}
-          onPress={() => router.push('/(tabs)/more')}
+          onPress={() => router.push('/settings')}
         >
-          <Text style={{ fontSize: 20 }}>🔔</Text>
+          <Text style={{ fontSize: 20 }}>⚙️</Text>
         </TouchableOpacity>
       </View>
 

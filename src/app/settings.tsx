@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, Text, View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, TextInput, View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, Scroller, Card, Title, Sub, useTheme } from '../components/ui';
 import { useSettings, Lang, ThemeMode, DEFAULT_SETTINGS } from '../lib/settings';
 import { t, LANGS } from '../lib/i18n';
 import { PRAYER_METHODS } from '../lib/prayerTimes';
-import { setJSON } from '../lib/storage';
+import { setJSON, getJSON } from '../lib/storage';
 import { playAzan, AZAN_OPTIONS } from '../lib/azanPlayer';
 import { requestBatteryExemption } from '../lib/notifications';
 import { useAuth } from '../lib/auth';
 import { getSyncMeta, syncAll, type SyncMeta } from '../lib/sync';
+import { detectDistrict, setDistrictManual } from '../lib/referral';
 
 function BackupSyncCard() {
   const { settings } = useSettings();
@@ -97,6 +98,21 @@ export default function Settings() {
   const th = useTheme();
   const lang = settings.lang;
 
+  // District for leaderboard
+  const [district, setDistrict] = useState<string>('');
+  const [editingDistrict, setEditingDistrict] = useState(false);
+  useEffect(() => {
+    getJSON<string>('userDistrictManual').then(d => { if (d) setDistrict(d); });
+    detectDistrict().then(d => { if (d) setDistrict(prev => prev || d); });
+  }, []);
+  const saveDistrict = async () => {
+    const d = district.trim();
+    if (!d) { Alert.alert('District', 'Please enter your district.'); return; }
+    await setDistrictManual(d);
+    setEditingDistrict(false);
+    Alert.alert('District', `District set to ${d} 📍`);
+  };
+
   const resetAll = () => {
     Alert.alert('Reset settings?', 'All app settings will return to defaults.', [
       { text: 'Cancel', style: 'cancel' },
@@ -144,6 +160,35 @@ export default function Settings() {
           <Sub style={[styles.head, { marginTop: 12 }]}>Clock</Sub>
           <Seg options={[{ v: '12', label: '12h' }, { v: '24', label: '24h' }]}
             value={settings.use24h ? '24' : '12'} onPick={v => update({ use24h: v === '24' })} />
+        </Card>
+
+        <Card>
+          <Sub style={styles.head}>📍 My District</Sub>
+          <Sub>Used for the district leaderboard. Auto-detected from location.</Sub>
+          {editingDistrict ? (
+            <View style={{ gap: 8, marginTop: 8 }}>
+              <TextInput
+                value={district}
+                onChangeText={setDistrict}
+                placeholder="Enter district name"
+                placeholderTextColor={th.sub}
+                style={{ borderWidth: 1, borderColor: th.border, borderRadius: 10, padding: 12, color: th.text, backgroundColor: th.bg, fontSize: 15 }}
+              />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity onPress={saveDistrict} style={{ backgroundColor: th.primary, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 20 }}>
+                  <Text style={{ color: '#FFF', fontWeight: '600' }}>Save</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setEditingDistrict(false)} style={{ backgroundColor: th.chip, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 20 }}>
+                  <Text style={{ color: th.text, fontWeight: '600' }}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity onPress={() => setEditingDistrict(true)} style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ color: th.text, fontSize: 16, fontWeight: '600' }}>{district || 'Not set'}</Text>
+              <Text style={{ color: th.accent, fontSize: 14 }}>Edit ✏️</Text>
+            </TouchableOpacity>
+          )}
         </Card>
 
         <Card>

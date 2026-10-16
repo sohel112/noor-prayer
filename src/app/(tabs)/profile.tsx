@@ -3,9 +3,10 @@
 
 import React, { useCallback, useState } from 'react';
 import {
-  ActivityIndicator, Alert, StyleSheet, Text, TextInput,
+  ActivityIndicator, Alert, Image, StyleSheet, Text, TextInput,
   TouchableOpacity, View,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
 import {
   Screen, Scroller, Card, useTheme, Title, Sub, SectionTitle,
@@ -107,6 +108,8 @@ export default function Profile() {
   const [syncing, setSyncing] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [savingName, setSavingName] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const meta = user?.user_metadata as Record<string, unknown> | undefined;
   const currentName = (typeof meta?.full_name === 'string' && meta.full_name)
@@ -120,7 +123,17 @@ export default function Profile() {
   const refresh = useCallback(async () => {
     setStats(await loadStats());
     setSyncMeta(await getSyncMeta());
-  }, []);
+    // Load avatar from profiles table
+    if (user) {
+      try {
+        const sb = getSupabase();
+        if (sb) {
+          const { data } = await sb.from('profiles').select('avatar_url').eq('id', user.id).single();
+          if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+        }
+      } catch { /* ignore */ }
+    }
+  }, [user]);
 
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
@@ -169,6 +182,54 @@ export default function Profile() {
     ]);
   };
 
+  const pickAvatar = async () => {
+    if (!user) {
+      Alert.alert(t('signIn', lang) ?? 'Sign in', t('loginSub', lang) ?? 'Please sign in to add a profile picture.');
+      return;
+    }
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Permission needed', 'Please allow photo access to set a profile picture.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      if (result.canceled || !result.assets?.[0]?.uri) return;
+      setUploadingAvatar(true);
+      const uri = result.assets[0].uri;
+      const sb = getSupabase();
+      if (!sb) throw new Error('Supabase not configured');
+      // Upload to avatars/{user.id}/avatar.jpg
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const path = `${user.id}/avatar.jpg`;
+      const { error: upErr } = await sb.storage.from('avatars').upload(path, blob, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+      if (upErr) throw upErr;
+      const { data: urlData } = sb.storage.from('avatars').getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+      // Save URL to profiles table
+      const { error: dbErr } = await sb.from('profiles').upsert(
+        { id: user.id, avatar_url: publicUrl },
+        { onConflict: 'id' }
+      );
+      if (dbErr) throw dbErr;
+      setAvatarUrl(publicUrl);
+      Alert.alert('Profile picture', 'Updated! 📸');
+    } catch (e: any) {
+      Alert.alert('Upload failed', e?.message ?? 'Try again.');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const lastSyncText = syncMeta.lastSync
     ? new Date(syncMeta.lastSync).toLocaleString()
     : 'Never';
@@ -180,9 +241,20 @@ export default function Profile() {
         {/* Header card */}
         <Card>
           <View style={styles.headerRow}>
-            <View style={[styles.avatar, { backgroundColor: th.primary }]}>
-              <Text style={styles.avatarText}>{initial}</Text>
-            </View>
+            <TouchableOpacity onPress={pickAvatar} disabled={uploadingAvatar} style={{ position: 'relative' }}>
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, { backgroundColor: th.primary }]}>
+                  <Text style={styles.avatarText}>{initial}</Text>
+                </View>
+              )}
+              <View style={[styles.cameraBadge, { backgroundColor: th.primary }]}>
+                {uploadingAvatar
+                  ? <ActivityIndicator color="#FFF" size="small" />
+                  : <Text style={{ fontSize: 14 }}>📷</Text>}
+              </View>
+            </TouchableOpacity>
             <View style={{ flex: 1 }}>
               {editingName ? (
                 <View style={{ gap: 8 }}>
@@ -330,6 +402,12 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   avatarText: { color: '#FFFFFF', fontSize: 28, fontFamily: FONTS.bodySemi },
+  cameraBadge: {
+    position: 'absolute', bottom: -2, right: -2,
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: '#FFFFFF',
+  },
   badge: {
     alignSelf: 'flex-start', borderRadius: 999,
     paddingHorizontal: 10, paddingVertical: 4, marginTop: 8,

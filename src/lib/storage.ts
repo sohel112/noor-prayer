@@ -29,6 +29,7 @@ const KEYS = {
   fajrAlarm: 'noor.fajralarm.v1', // { enabled, hour, minute }
   readingStreak: 'noor.readingStreak.v1', // { dates: string[] } YYYY-MM-DD Quran reading days
   hifzRev: 'noor.hifzrev.v1', // { 's': 'YYYY-MM-DD' } last revision date per surah
+  updateCheck: 'noor.updatecheck.v1', // timestamp of last update check
 } as const;
 
 export type StorageKey = keyof typeof KEYS;

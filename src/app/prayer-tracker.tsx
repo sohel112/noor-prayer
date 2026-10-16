@@ -42,9 +42,16 @@ const PRAYER_ICONS: Record<PrayerName, string> = {
 function dayKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
-
 function storageKey(d: Date): string {
   return `prayerDone:${dayKey(d)}`;
+}
+function sunnahKey(d: Date): string {
+  return `sunnahDone:${dayKey(d)}`;
+}
+
+
+function naflKey(d: Date): string {
+  return `naflDone:${dayKey(d)}`;
 }
 
 function prayerDate(times: PrayerTimes, name: PrayerName, base: Date): Date {

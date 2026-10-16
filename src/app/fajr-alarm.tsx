@@ -16,7 +16,7 @@ export default function FajrAlarm() {
   const th = useTheme();
   const { settings } = useSettings();
   const [seconds, setSeconds] = useState(0);
-  const azanId: AzanId = settings.azanSound === 'azan2' ? 'azan2' : 'azan1';
+  const azanId: AzanId = (settings.azanSound === 'azan2' || settings.azanSound === 'azan3') ? settings.azanSound as AzanId : 'azan1';
 
   useEffect(() => {
     // Start the alarm sound + vibration pattern.

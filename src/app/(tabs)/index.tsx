@@ -236,6 +236,9 @@ const ALL_FEATURES = [
   { label: 'Adhkar', icon: '🌅', route: '/adhkar' },
   { label: '99 Names', icon: '✨', route: '/names' },
   { label: 'Hadith', icon: '📜', route: '/hadith' },
+  { label: 'Tasbih', icon: '📿', route: '/tasbih' },
+  { label: 'Audio', icon: '🎧', route: '/audio' },
+  { label: 'Battery Guide', icon: '🔋', route: '/battery' },
   // Regular use
   { label: 'Makkah Live', icon: '🕋', route: '/makkah' },
   { label: 'Mosque Finder', icon: '🕌', route: '/mosques' },

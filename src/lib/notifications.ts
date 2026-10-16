@@ -103,6 +103,9 @@ export async function ensureNotificationPermissions(): Promise<boolean> {
   } catch {
     return false;
   }
+
+
+
 }
 
 /** Current permission status without prompting. */
@@ -115,7 +118,40 @@ export async function getNotificationPermissionStatus(): Promise<string> {
   }
 }
 
-/**
+//**
+ * Check + request the "Alarms & reminders" exact-alarm permission (Android 12+).
+ * Without this, prayer notifications fall back to inexact alarms and can arrive
+ * MINUTES LATE (Doze mode). Returns true if exact alarms are allowed.
+ * If not allowed, opens the system settings screen so the user can grant it.
+ */
+export async function ensureExactAlarmPermission(): Promise<boolean> {
+  if (Platform.OS !== 'android') return true;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const IntentLauncher = require('expo-intent-launcher');
+    // Check via native AlarmManager — expo doesn't expose this, so we try
+    // scheduling a test via canScheduleExactAlarms if available.
+    let canSchedule = false;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { AlarmManager } = require('expo-notifications');
+      if (AlarmManager && typeof AlarmManager.canScheduleExactAlarms === 'function') {
+        canSchedule = await AlarmManager.canScheduleExactAlarms();
+      }
+    } catch { /* module may not expose it */ }
+    if (canSchedule) return true;
+    // Not granted (or unknown) — open the exact-alarm settings screen.
+    await IntentLauncher.startActivityAsync(
+      'android.settings.REQUEST_SCHEDULE_EXACT_ALARM',
+      { data: 'package:com.noor.prayer' },
+    );
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+**
  * 1-tap shortcut to the system's battery-optimization exemption screen for
  * this app (Android). This is the single most effective fix for missed azans
  * on Xiaomi/Samsung/Oppo/Vivo — no deep guide needed.

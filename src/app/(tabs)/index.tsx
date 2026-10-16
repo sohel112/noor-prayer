@@ -6,6 +6,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Screen, Scroller, Card, useTheme, Heading, Sub, PrimaryButton, Arabic } from '../../components/ui';
 import { AdBanner } from '../../components/AdBanner';
+import { JumuahBanner } from '../../components/JumuahBanner';
 import { useSettings } from '../../lib/settings';
 import { t } from '../../lib/i18n';
 import { useLocation } from '../../lib/location';
@@ -346,6 +347,8 @@ export default function Home() {
       </View>
 
       <Scroller>
+        {/* Jumu'ah greetings on Fridays */}
+        <JumuahBanner />
         {/* Date lines */}
         <View>
           <Text style={[styles.gregDate, { color: th.text }]}>{dateLabel(today)}</Text>

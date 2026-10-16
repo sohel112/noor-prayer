@@ -80,6 +80,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         }
       }
       setJSON('settings', next);
+      // Prayer-relevant settings changed → refresh home-screen widget.
+      if (p.methodId || p.asrJuristic || p.highLatitudeRule || p.adjustments !== undefined || p.dhuhrOffsetMinutes !== undefined || p.use24h !== undefined || p.hijriAdjust !== undefined) {
+        import('./widgetSync').then(m => m.syncPrayerWidget(true)).catch(() => {});
+      }
       return next;
     });
   };

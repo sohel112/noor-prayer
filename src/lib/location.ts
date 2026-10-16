@@ -26,6 +26,8 @@ export function useLocation() {
   const save = async (l: SavedLocation) => {
     await setJSON('location', l);
     setLoc(l);
+    // Location changed → prayer times change → refresh home-screen widget.
+    import('./widgetSync').then(m => m.syncPrayerWidget(true)).catch(() => {});
   };
 
   const useGps = async (): Promise<SavedLocation | null> => {

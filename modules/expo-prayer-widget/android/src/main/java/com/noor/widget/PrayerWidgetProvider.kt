@@ -13,8 +13,24 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
+/**
+ * Home-screen widget for the Deen app: next prayer name, live countdown,
+ * and Hijri date.
+ *
+ * Data source: the JS side writes a snapshot JSON via `refreshWidgetData()`
+ * (see src/lib/widgetData.ts) to AsyncStorage under key [SNAPSHOT_KEY].
+ * On Android, @react-native-async-storage/async-storage persists into the
+ * "RKStorage" store, so this provider reads it directly:
+ *   1. SharedPreferences file "RKStorage" (legacy layout), then
+ *   2. SQLite database "RKStorage", table "catalystLocalStorage" (current layout).
+ *
+ * The snapshot's `nextPrayerAt` ISO timestamp is used to compute a fresh
+ * countdown at each update; `countdownText` is only a fallback.
+ * If no snapshot exists yet, the widget prompts the user to open the app.
+ */
 class PrayerWidgetProvider : AppWidgetProvider() {
 
+  /** Parsed widget snapshot. */
   private data class Snapshot(
     val nextPrayerName: String,
     val nextPrayerAt: String?,
@@ -53,6 +69,7 @@ class PrayerWidgetProvider : AppWidgetProvider() {
       views.setTextViewText(R.id.widget_hijri_date, snapshot.hijriDate ?: "")
     }
 
+    // Tapping the widget opens the app.
     val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
     val flags = PendingIntent.FLAG_UPDATE_CURRENT or
       (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
@@ -62,6 +79,7 @@ class PrayerWidgetProvider : AppWidgetProvider() {
     appWidgetManager.updateAppWidget(appWidgetId, views)
   }
 
+  /** Fresh HH:MM:SS countdown from `nextPrayerAt`; falls back to stored text. */
   private fun countdownFor(snapshot: Snapshot): String {
     val at = snapshot.nextPrayerAt?.let { parseIso(it) }
     if (at != null) {
@@ -85,16 +103,25 @@ class PrayerWidgetProvider : AppWidgetProvider() {
           timeZone = TimeZone.getTimeZone("UTC")
         }.parse(iso)
       } catch (_: Exception) {
+        // try next pattern
       }
     }
     return null
   }
 
   companion object {
+    /** AsyncStorage key written by JS `refreshWidgetData()`. */
     const val SNAPSHOT_KEY = "noor.widget.v1"
+
+    /** AsyncStorage store name on Android. */
     private const val RK_STORAGE = "RKStorage"
 
-    fun readSnapshot(context: Context): Snapshot? {
+    /**
+     * Read the latest snapshot, trying SharedPreferences first (legacy
+     * AsyncStorage layout) then the SQLite database (current layout).
+     * Returns null when nothing has been written yet.
+     */
+    private fun readSnapshot(context: Context): Snapshot? {
       readFromSharedPrefs(context)?.let { return it }
       return readFromDatabase(context)
     }

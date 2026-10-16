@@ -206,8 +206,23 @@ export async function reschedulePrayerNotifications(
           },
         });
 
-        // Optional 15-minute heads-up reminder (toggle: settings.notifications.reminder15)
-        if (settings.notifications['reminder15']) {
+        // Pre-Adhan reminder (configurable: 5/10/15 min before, 0 = off)
+        const preMins = settings.preAdhanMinutes || 0;
+        if (preMins > 0) {
+          const remindAt = new Date(at.getTime() - preMins * 60000);
+          if (remindAt.getTime() > Date.now() + 60000) {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: `⏳ ${PRAYER_LABELS[key]} in ${preMins} minutes`,
+                body: 'Get ready for prayer. Make wudu.',
+                data: { kind: 'prayer-reminder', prayer: key },
+              },
+              trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: remindAt },
+            });
+          }
+        }
+        // Legacy 15-min toggle (kept for backward compat)
+        if (settings.notifications['reminder15'] && preMins === 0) {
           const remindAt = new Date(at.getTime() - 15 * 60000);
           if (remindAt.getTime() > Date.now() + 60000) {
             await Notifications.scheduleNotificationAsync({

@@ -5,6 +5,11 @@ on:
     branches: [master, main]
   workflow_dispatch:
 
+# Cancel older runs when a new push arrives (saves minutes on duplicate builds)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,6 +30,9 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       # Android SDK is pre-installed on ubuntu-latest runners
       - name: Accept Android licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
@@ -40,6 +48,10 @@ jobs:
 
       - name: Expo prebuild
         run: npx expo prebuild --platform android --no-install
+
+      - name: Gradle speed flags
+        run: |
+          printf '\norg.gradle.parallel=true\norg.gradle.caching=true\n' >> android/gradle.properties
 
       - name: Build APK (release, debug-signed standalone)
         run: |

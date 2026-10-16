@@ -43,7 +43,7 @@ export async function setupNotificationCategories(): Promise<void> {
       // v2 channels are used going forward (see getAzanChannelId).
       for (const old of [
         'prayer-azan', 'prayer-azan-v1', 'prayer-azan-v2',
-        'prayer-azan-s1', 'prayer-azan-s2',
+        'prayer-azan-s1', 'prayer-azan-s2', 'prayer-azan-s3',
       ]) {
         try { await Notifications.deleteNotificationChannelAsync(old); } catch { /* ignore */ }
       }
@@ -73,7 +73,7 @@ export async function setupNotificationCategories(): Promise<void> {
           contentType: Notifications.AndroidAudioContentType.SONIFICATION,
         },
       });
-      console.log('[azan] notification channels created (s1, s2)');
+      await Notifications.setNotificationChannelAsync('prayer-azan-s3-v1', { name: 'Prayer Azan (Makkah)', importance: Notifications.AndroidImportance.MAX, sound: 'azan-makkah', vibrationPattern: [0, 1000, 500, 1000], lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC }); console.log('[azan] notification channels created (s1, s2)'); // Channel for azan3 (Makkah) — v1 ID.
     } catch (e) {
       console.warn('[azan] channel setup failed:', e);
     }
@@ -84,7 +84,7 @@ export async function setupNotificationCategories(): Promise<void> {
 export function getAzanChannelId(azanSound: string): string {
   // v2: bumped to force fresh channel creation (old channels had no/wrong sound
   // and Android channels are immutable).
-  if (azanSound === 'azan2') return 'prayer-azan-s2-v2';
+  if (azanSound === 'azan2') return 'prayer-azan-s2-v2'; if (azanSound === 'azan3') return 'prayer-azan-s3-v1';
   return 'prayer-azan-s1-v2'; // default 'azan'
 }
 

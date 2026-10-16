@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Merged into the app manifest by the Android Gradle plugin. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <receiver
+        android:name="com.noor.widget.PrayerWidgetProvider"
+        android:exported="false"
+        android:label="Deen Prayer">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data
+          android:name="android.appwidget.provider"
+          android:resource="@xml/prayer_widget_info" />
+    </receiver>
+  </application>
+</manifest>

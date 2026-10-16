@@ -151,7 +151,7 @@ export async function ensureExactAlarmPermission(): Promise<boolean> {
   }
 }
 
-**
+/**
  * 1-tap shortcut to the system's battery-optimization exemption screen for
  * this app (Android). This is the single most effective fix for missed azans
  * on Xiaomi/Samsung/Oppo/Vivo — no deep guide needed.

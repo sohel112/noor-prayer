@@ -20,19 +20,19 @@ module.exports = function withAzanSounds(config) {
         fs.mkdirSync(destDir, { recursive: true });
       }
 
-      for (const file of ['azan.mp3', 'azan2.mp3', 'azan-makkah.mp3']) {
-        const src = path.join(srcDir, file);
-        const dest = path.join(destDir, file);
+      for (const [srcFile, destFile] of [['azan.mp3', 'azan.mp3'], ['azan2.mp3', 'azan2.mp3'], ['azan-makkah.mp3', 'azan_makkah.mp3']]) {
+        const src = path.join(srcDir, srcFile);
+        const dest = path.join(destDir, destFile);
         if (fs.existsSync(src)) {
           fs.copyFileSync(src, dest);
-          console.log(`[withAzanSounds] copied ${file} to res/raw`);
+          console.log(`[withAzanSounds] copied ${srcFile} to res/raw/${destFile}`);
         } else {
           console.warn(`[withAzanSounds] missing: ${src}`);
         }
       }
       // keep.xml stops resource shrinker deleting raw azan files
       const valuesDir = path.join(platformRoot, 'app', 'src', 'main', 'res', 'values');
-      const keepXml = '<?xml version="1.0" encoding="utf-8"?>\n<resources xmlns:tools="http://schemas.android.com/tools"\n    tools:keep="@raw/azan,@raw/azan2,@raw/azan-makkah" />\n';
+      const keepXml = '<?xml version="1.0" encoding="utf-8"?>\n<resources xmlns:tools="http://schemas.android.com/tools"\n    tools:keep="@raw/azan,@raw/azan2,@raw/azan_makkah" />\n';
       if (!fs.existsSync(valuesDir)) { fs.mkdirSync(valuesDir, { recursive: true }); }
       fs.writeFileSync(path.join(valuesDir, 'azan_keep.xml'), keepXml);
       return config;

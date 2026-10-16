@@ -73,7 +73,7 @@ export async function setupNotificationCategories(): Promise<void> {
           contentType: Notifications.AndroidAudioContentType.SONIFICATION,
         },
       });
-      await Notifications.setNotificationChannelAsync('prayer-azan-s3-v1', { name: 'Prayer Azan (Makkah)', importance: Notifications.AndroidImportance.MAX, sound: 'azan-makkah', vibrationPattern: [0, 1000, 500, 1000], lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC }); console.log('[azan] notification channels created (s1, s2)'); // Channel for azan3 (Makkah) — v1 ID.
+      await Notifications.setNotificationChannelAsync('prayer-azan-s3-v1', { name: 'Prayer Azan (Makkah)', importance: Notifications.AndroidImportance.MAX, sound: 'azan_makkah', vibrationPattern: [0, 1000, 500, 1000], lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC }); console.log('[azan] notification channels created (s1, s2)'); // Channel for azan3 (Makkah) — v1 ID.
     } catch (e) {
       console.warn('[azan] channel setup failed:', e);
     }

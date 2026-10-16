@@ -35,6 +35,12 @@ const TOOLS: Tool[] = [
   { label: 'Adhkar', icon: '🌅', route: '/adhkar' },
   { label: 'Fajr Alarm', icon: '⏰', route: '/fajr-alarm' },
   { label: 'Battery Guide', icon: '🔋', route: '/battery' },
+  { label: 'Khatm Tracker', icon: '📖', route: '/khatm-tracker' },
+  { label: 'Islamic Events', icon: '📅', route: '/islamic-events' },
+  { label: 'Sadaqah Tracker', icon: '💰', route: '/sadaqah-tracker' },
+  { label: 'Tahajjud Tracker', icon: '🌙', route: '/tahajjud-tracker' },
+  { label: 'Masjid Visits', icon: '🕌', route: '/masjid-visits' },
+  { label: "I'tikaf Tracker", icon: '🕋', route: '/itikaf-tracker' },
 ];
 
 const FONT_SIZES: { key: FontSize; label: string }[] = [
@@ -181,7 +187,6 @@ export default function More() {
           <Card style={{ padding: 4, paddingHorizontal: 14 }}>
             <RowButton label="Prayer Times" hint="Method, adjustments & azan" icon="🕌" onPress={() => go('/settings')} />
             <RowButton label={t('quran', lang)} hint="Read & translations" icon="📖" onPress={() => go('/(tabs)/quran')} />
-            <RowButton label="Notifications" hint="Alerts & reminders" icon="🔔" onPress={() => go('/notifications')} />
             <TouchableOpacity
               onPress={() => setAppearanceOpen(o => !o)}
               activeOpacity={0.7}

@@ -13,6 +13,7 @@ import { getJSON, setJSON } from '../../lib/storage';
 import quranData from '../../../assets/data/quran.json';
 import { recordReadingDay } from '../../lib/readingStreak';
 import tafsirData from '../../../assets/data/tafsir.json';
+import { applyTajweed, TAJWEED_LEGEND } from '../../lib/tajweed';
 
 interface Verse { n: number; ar: string; en: string; ur: string; hi: string; }
 
@@ -34,6 +35,26 @@ function ActionBtn({ icon, label, onPress, active }: {
       <Text style={{ fontSize: 22 }}>{icon}</Text>
       <Text style={[styles.actionLabel, { color: active ? th.primary : th.sub }]}>{label}</Text>
     </TouchableOpacity>
+  );
+}
+
+// Renders Arabic text with tajweed color-coding
+function TajweedText({ arabic, defaultColor, style }: {
+  arabic: string; defaultColor: string; style?: any;
+}) {
+  const segments = applyTajweed(arabic);
+  const hasColors = segments.some(s => s.color !== null);
+  if (!hasColors) {
+    return <Text style={[style, { color: defaultColor }]}>{arabic}</Text>;
+  }
+  return (
+    <Text style={style}>
+      {segments.map((seg, idx) => (
+        <Text key={idx} style={{ color: seg.color || defaultColor }}>
+          {seg.text}
+        </Text>
+      ))}
+    </Text>
   );
 }
 
@@ -75,6 +96,7 @@ function ReaderBody({ surahNum, ayahParam }: { surahNum: number; ayahParam?: str
   const [openTafsir, setOpenTafsir] = useState<Record<number, boolean>>({});
   const [expandAllTafsir, setExpandAllTafsir] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [tajweedOn, setTajweedOn] = useState(false);
 
   // --- audio player state ---
   const [showPlayer, setShowPlayer] = useState(false);
@@ -219,7 +241,11 @@ function ReaderBody({ surahNum, ayahParam }: { surahNum: number; ayahParam?: str
         </View>
 
         {showArabic ? (
-          <Text style={[styles.arabic, { color: th.text }]}>{item.ar}</Text>
+          tajweedOn ? (
+            <TajweedText arabic={item.ar} defaultColor={th.text} style={styles.arabic} />
+          ) : (
+            <Text style={[styles.arabic, { color: th.text }]}>{item.ar}</Text>
+          )
         ) : (
           <TouchableOpacity
             onPress={() => setRevealed(p => ({ ...p, [item.n]: true }))}
@@ -284,7 +310,35 @@ function ReaderBody({ surahNum, ayahParam }: { surahNum: number; ayahParam?: str
             🧠 {hifzMode ? 'ON' : 'Hifz'}
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setTajweedOn(v => !v)}
+          activeOpacity={0.7}
+          style={[styles.hifzChip, { backgroundColor: tajweedOn ? th.primary : th.chip, marginLeft: 8 }]}
+        >
+          <Text style={{
+            color: tajweedOn ? th.onPrimary : th.primary,
+            fontSize: 12, fontWeight: '700',
+          }}>
+            🎨 {tajweedOn ? 'ON' : 'Tajweed'}
+          </Text>
+        </TouchableOpacity>
       </View>
+
+      {tajweedOn ? (
+        <View style={[styles.tajweedLegend, { backgroundColor: th.accentSoft, borderColor: th.border }]}>
+          <Text style={[styles.tajweedLegendTitle, { color: th.text }]}>🎨 Tajweed Colors</Text>
+          <View style={styles.tajweedLegendGrid}>
+            {TAJWEED_LEGEND.map((item, idx) => (
+              <View key={idx} style={styles.tajweedLegendItem}>
+                <View style={[styles.tajweedDot, { backgroundColor: item.color }]} />
+                <Text style={[styles.tajweedLegendText, { color: th.sub }]}>
+                  {item.rule}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
 
       {hifzMode ? (
         <View style={[styles.hifzBar, { backgroundColor: th.accentSoft, borderBottomColor: th.border }]}>
@@ -428,6 +482,15 @@ const styles = StyleSheet.create({
   subHeadText: { flex: 1, textAlign: 'center', fontSize: 13 },
   hifzChip: { borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
   hifzBar: { paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1 },
+  tajweedLegend: {
+    marginHorizontal: 16, marginBottom: 8, padding: 12,
+    borderRadius: 12, borderWidth: 1,
+  },
+  tajweedLegendTitle: { fontSize: 13, fontWeight: '700', marginBottom: 8 },
+  tajweedLegendGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tajweedLegendItem: { flexDirection: 'row', alignItems: 'center', marginRight: 12, marginBottom: 4 },
+  tajweedDot: { width: 12, height: 12, borderRadius: 6, marginRight: 6 },
+  tajweedLegendText: { fontSize: 12 },
   progressBg: { height: 6, borderRadius: 3, marginTop: 8, overflow: 'hidden' },
   progressFill: { height: 6, borderRadius: 3 },
   introCard: { borderRadius: 14, padding: 14, borderWidth: 1.5, marginBottom: 4 },

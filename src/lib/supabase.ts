@@ -15,6 +15,11 @@ function getConfig(): { url: string; anonKey: string } {
   return { url, anonKey };
 }
 
+/** Supabase project URL (used by Edge Function calls). */
+export const SUPABASE_URL = getConfig().url;
+/** Supabase anon key (used by Edge Function calls). */
+export const SUPABASE_ANON_KEY = getConfig().anonKey;
+
 /** True when the owner has filled in real Supabase credentials. */
 export function isSupabaseConfigured(): boolean {
   const { url, anonKey } = getConfig();

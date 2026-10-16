@@ -118,7 +118,7 @@ export async function getNotificationPermissionStatus(): Promise<string> {
   }
 }
 
-//**
+/**
  * Check + request the "Alarms & reminders" exact-alarm permission (Android 12+).
  * Without this, prayer notifications fall back to inexact alarms and can arrive
  * MINUTES LATE (Doze mode). Returns true if exact alarms are allowed.

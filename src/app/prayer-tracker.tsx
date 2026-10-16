@@ -16,7 +16,6 @@ import { AdBanner } from '../components/AdBanner';
 const PRAYER_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
 type PrayerName = (typeof PRAYER_ORDER)[number];
 
-
 // Sunnah rakats per prayer: [before, after]
 const SUNNAH_RAKATS: Record<PrayerName, { before: number; after: number }> = {
   fajr: { before: 2, after: 0 },
@@ -35,6 +34,7 @@ const NAFL_PRAYERS = [
   { id: 'awwabin', name: 'Awwabin', icon: '🌇', desc: 'After Maghrib' },
 ] as const;
 type NaflId = (typeof NAFL_PRAYERS)[number]['id'];
+
 const PRAYER_ICONS: Record<PrayerName, string> = {
   fajr: '🌙', dhuhr: '☀️', asr: '🌤️', maghrib: '🌇', isha: '🌌',
 };
@@ -42,13 +42,14 @@ const PRAYER_ICONS: Record<PrayerName, string> = {
 function dayKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
+
 function storageKey(d: Date): string {
   return `prayerDone:${dayKey(d)}`;
 }
+
 function sunnahKey(d: Date): string {
   return `sunnahDone:${dayKey(d)}`;
 }
-
 
 function naflKey(d: Date): string {
   return `naflDone:${dayKey(d)}`;
@@ -123,6 +124,8 @@ export default function PrayerTracker() {
 
   const today = useMemo(() => new Date(), []);
   const [done, setDone] = useState<PrayerName[]>([]);
+  const [sunnahDone, setSunnahDone] = useState<string[]>([]);
+  const [naflDone, setNaflDone] = useState<NaflId[]>([]);
   const [weekFull, setWeekFull] = useState<boolean[]>(Array(7).fill(false));
 
   const times: PrayerTimes | null = useMemo(() => {
@@ -141,6 +144,11 @@ export default function PrayerTracker() {
       const raw = await AsyncStorage.getItem(storageKey(today));
       const arr = raw ? (JSON.parse(raw) as string[]) : [];
       setDone(arr.filter(p => (PRAYER_ORDER as readonly string[]).includes(p)) as PrayerName[]);
+      // Load sunnah & nafl
+      const sRaw = await AsyncStorage.getItem(sunnahKey(today));
+      setSunnahDone(sRaw ? JSON.parse(sRaw) : []);
+      const nRaw = await AsyncStorage.getItem(naflKey(today));
+      setNaflDone(nRaw ? JSON.parse(nRaw) : []);
       // Weekly progress: full day = all 5 prayers done
       const days = [...Array(7)].map((_, i) => {
         const d = new Date(today);
@@ -166,6 +174,22 @@ export default function PrayerTracker() {
     setDone(prev => {
       const next = prev.includes(name) ? prev.filter(p => p !== name) : [...prev, name];
       AsyncStorage.setItem(storageKey(today), JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, [today]);
+
+  const toggleSunnah = useCallback(async (key: string) => {
+    setSunnahDone(prev => {
+      const next = prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key];
+      AsyncStorage.setItem(sunnahKey(today), JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, [today]);
+
+  const toggleNafl = useCallback(async (id: NaflId) => {
+    setNaflDone(prev => {
+      const next = prev.includes(id) ? prev.filter(n => n !== id) : [...prev, id];
+      AsyncStorage.setItem(naflKey(today), JSON.stringify(next)).catch(() => {});
       return next;
     });
   }, [today]);
@@ -219,6 +243,77 @@ export default function PrayerTracker() {
             })}
           </Card>
         )}
+
+        {/* Sunnah prayers */}
+        <Card>
+          <Text style={[styles.cardTitle, { color: th.text }]}>🕌 Sunnah Prayers</Text>
+          <Sub style={{ marginBottom: 8 }}>Track your Sunnah rakats</Sub>
+          {PRAYER_ORDER.map(name => {
+            const { before, after } = SUNNAH_RAKATS[name];
+            if (before === 0 && after === 0) return null;
+            return (
+              <View key={name} style={{ marginBottom: 10 }}>
+                <Text style={{ color: th.text, fontSize: 14, fontWeight: '700', marginBottom: 6, textTransform: 'capitalize' }}>
+                  {PRAYER_ICONS[name]} {name}
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {before > 0 && (
+                    <TouchableOpacity
+                      onPress={() => toggleSunnah(`${name}-before`)}
+                      style={[styles.sunnahChip, {
+                        backgroundColor: sunnahDone.includes(`${name}-before`) ? th.primary : th.chip,
+                      }]}
+                    >
+                      <Text style={{ color: sunnahDone.includes(`${name}-before`) ? '#FFF' : th.text, fontSize: 13, fontWeight: '600' }}>
+                        {sunnahDone.includes(`${name}-before`) ? '✓ ' : ''}{before} before
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  {after > 0 && (
+                    <TouchableOpacity
+                      onPress={() => toggleSunnah(`${name}-after`)}
+                      style={[styles.sunnahChip, {
+                        backgroundColor: sunnahDone.includes(`${name}-after`) ? th.primary : th.chip,
+                      }]}
+                    >
+                      <Text style={{ color: sunnahDone.includes(`${name}-after`) ? '#FFF' : th.text, fontSize: 13, fontWeight: '600' }}>
+                        {sunnahDone.includes(`${name}-after`) ? '✓ ' : ''}{after} after
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+        </Card>
+
+        {/* Nafl prayers */}
+        <Card>
+          <Text style={[styles.cardTitle, { color: th.text }]}>✨ Nafl Prayers</Text>
+          <Sub style={{ marginBottom: 8 }}>Optional prayers for extra reward</Sub>
+          {NAFL_PRAYERS.map(p => {
+            const isDone = naflDone.includes(p.id);
+            return (
+              <TouchableOpacity
+                key={p.id}
+                onPress={() => toggleNafl(p.id)}
+                style={[styles.naflRow, { borderColor: th.border, backgroundColor: isDone ? th.accentSoft : 'transparent' }]}
+              >
+                <Text style={{ fontSize: 22 }}>{p.icon}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: th.text, fontSize: 15, fontWeight: '600' }}>{p.name}</Text>
+                  <Text style={{ color: th.sub, fontSize: 12 }}>{p.desc}</Text>
+                </View>
+                <View style={[styles.checkCircle, {
+                  backgroundColor: isDone ? th.primary : 'transparent',
+                  borderColor: isDone ? th.primary : th.border,
+                }]}>
+                  {isDone && <Text style={{ color: '#FFF', fontSize: 14 }}>✓</Text>}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </Card>
 
         {/* Weekly progress */}
         <Card>
@@ -286,4 +381,16 @@ const styles = StyleSheet.create({
     borderRadius: 14, padding: 14,
   },
   motivationText: { fontSize: 14, fontFamily: FONTS.bodyMedium, flex: 1, lineHeight: 20 },
+  sunnahChip: {
+    borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14,
+  },
+  naflRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingVertical: 12, paddingHorizontal: 12,
+    borderWidth: 1, borderRadius: 12, marginBottom: 8,
+  },
+  checkCircle: {
+    width: 28, height: 28, borderRadius: 14,
+    borderWidth: 2, alignItems: 'center', justifyContent: 'center',
+  },
 });

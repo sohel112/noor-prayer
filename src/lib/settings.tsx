@@ -25,6 +25,7 @@ export interface Settings {
   azanSound: string; // 'azan1' | 'azan2' | 'silent'
   notifications: Record<string, boolean>; // per-prayer on/off
   fajrForceWake: boolean; // loud force-wake alarm for Fajr (overrides silent via audio mode)
+  preAdhanMinutes: number; // 0 = off, 5/10/15 = reminder before each prayer
   quietFrom: string; // "HH:MM"
   quietTo: string;
   translation: Lang; // Quran translation language
@@ -43,6 +44,7 @@ export const DEFAULT_SETTINGS: Settings = {
   azanSound: 'azan1',
   notifications: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true },
   fajrForceWake: false,
+  preAdhanMinutes: 0,
   quietFrom: '22:00',
   quietTo: '04:00',
   translation: 'en',

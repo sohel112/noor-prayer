@@ -348,36 +348,6 @@ export default function Home() {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loc?.lat, loc?.lng, settings.methodId, settings.asrJuristic, settings.highLatitudeRule, JSON.stringify(settings.adjustments), settings.dhuhrOffsetMinutes, JSON.stringify(settings.notifications), settings.azanSound, settings.quietFrom, settings.quietTo, settings.fajrForceWake]);
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.bellBtn, { backgroundColor: th.chip }]}
-            onPress={async () => {
-              const { Alert } = await import('react-native');
-              const result = await shareApp(lang, true);
-              if (result === 'login_required') {
-                Alert.alert(
-                  'Login Required',
-                  'Please login to earn referrals! Your referral count will only increase after login. 🤲',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Login', onPress: () => router.push('/profile') },
-                  ]
-                );
-              }
-            }}
-          >
-            <Text style={{ fontSize: 20 }}>📤</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.bellBtn, { backgroundColor: th.chip }]}
-            onPress={() => router.push('/settings')}
-          >
-            <Text style={{ fontSize: 20 }}>⚙️</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
 
   return (
     <Screen edges={['top']}>
@@ -389,6 +359,26 @@ export default function Home() {
             {loc?.label ?? 'Set location'}
           </Text>
         </View>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={[styles.bellBtn, { backgroundColor: th.chip }]}
+          onPress={async () => {
+            const { Alert } = await import('react-native');
+            const result = await shareApp(lang, true);
+            if (result === 'login_required') {
+              Alert.alert(
+                'Login Required',
+                'Please login to earn referrals! Your referral count will only increase after login. 🤲',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Login', onPress: () => router.push('/profile') },
+                ]
+              );
+            }
+          }}
+        >
+          <Text style={{ fontSize: 20 }}>📤</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           activeOpacity={0.7}
           style={[styles.bellBtn, { backgroundColor: th.chip }]}

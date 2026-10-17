@@ -62,11 +62,7 @@ jobs:
           cp assets/audio/azan2.mp3 android/app/src/main/res/raw/azan2.mp3
           cp assets/audio/azan-makkah.mp3 android/app/src/main/res/raw/azan_makkah.mp3
           # Keep.xml prevents resource shrinker from deleting notification sounds
-          cat > android/app/src/main/res/raw/keep.xml << 'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@raw/azan,@raw/azan2,@raw/azan_makkah" />
-EOF
+          printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' '<resources xmlns:tools="http://schemas.android.com/tools"' '    tools:keep="@raw/azan,@raw/azan2,@raw/azan_makkah" />' > android/app/src/main/res/raw/keep.xml
           ls -lh android/app/src/main/res/raw/
 
       - name: Build APK (release, debug-signed standalone)

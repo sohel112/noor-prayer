@@ -65,7 +65,6 @@
           }
         }
       ],
-      "./plugins/withAzanSounds.js",
       [
         "expo-image-picker",
         {

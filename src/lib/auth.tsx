@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Native Google Sign-In (in-app, no browser)
       const { GoogleSignin } = await import('@react-native-google-signin/google-signin');
       GoogleSignin.configure({
-        webClientId: 'YOUR_WEB_CLIENT_ID_HERE', // TODO: Replace with actual Web Client ID from Google Cloud Console
+        webClientId: '452961690062-m1pp5ekh3ij58m1bftbdrr64nh8iq95e.apps.googleusercontent.com',
         offlineAccess: false,
       });
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });

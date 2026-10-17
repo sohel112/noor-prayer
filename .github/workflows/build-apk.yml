@@ -52,6 +52,8 @@ jobs:
       - name: Gradle speed flags
         run: |
           printf '\norg.gradle.parallel=true\norg.gradle.caching=true\n' >> android/gradle.properties
+          # Disable resource shrinking to keep azan notification sounds
+          echo "android.shrinkResources=false" >> android/gradle.properties
 
       - name: Copy azan sounds to Android raw resources
         run: |

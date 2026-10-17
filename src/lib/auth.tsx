@@ -89,7 +89,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error || !data?.url) return { error: error?.message ?? 'Could not start Google sign-in.' };
       const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
       if (res.type !== 'success' || !res.url) return { error: 'Sign-in was cancelled.' };
-      if (Platform.OS !== 'web') {
+      // The redirect URL contains session tokens in the fragment (#access_token=...).
+      // openAuthSessionAsync returns it as a string instead of navigating, so
+      // parse it manually and set the session.
+      try {
+        const url = new URL(res.url);
+        const hash = url.hash?.startsWith('#') ? url.hash.slice(1) : url.hash;
+        const params = new URLSearchParams(hash || '');
+        const access_token = params.get('access_token');
+        const refresh_token = params.get('refresh_token');
+        if (access_token && refresh_token) {
+          const { error: setErr } = await sb.auth.setSession({ access_token, refresh_token });
+          if (setErr) return { error: setErr.message };
+        } else {
+          // Fallback: let Supabase try to detect the session from storage/URL.
+          const { error: sessErr } = await sb.auth.getSession();
+          if (sessErr) return { error: sessErr.message };
+        }
+      } catch {
         const { error: sessErr } = await sb.auth.getSession();
         if (sessErr) return { error: sessErr.message };
       }

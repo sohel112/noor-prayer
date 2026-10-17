@@ -18,10 +18,9 @@ import {
 import { SettingsProvider, useSettings } from '../lib/settings';
 import { AuthProvider } from '../lib/auth';
 import Onboarding from '../components/Onboarding';
-import Splash from '../components/Splash';
 import { UpdateDialog } from '../components/UpdateDialog';
 import { RootErrorBoundary } from '../components/RootErrorBoundary';
-import { getJSON } from '../lib/storage';
+import { getJSON, setJSON } from '../lib/storage';
 import { playAzan, stopAzan, type AzanId } from '../lib/azanPlayer';
 import { checkAppIntegrity, shouldAllowCloudSync } from '../lib/security';
 
@@ -29,7 +28,6 @@ function Inner() {
   const { settings } = useSettings();
   const [checked, setChecked] = useState(false);
   const [onboarded, setOnboarded] = useState(true);
-  const [splashed, setSplashed] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<import('../lib/updateCheck').UpdateInfo | null>(null);
   const notifListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
@@ -138,12 +136,6 @@ function Inner() {
         <ActivityIndicator color="#FFFFFF" size="large" />
       </View>
     );
-  }
-
-  // Splash (Get Started/Skip) only shows on first launch — once onboarded,
-  // the app opens directly without it.
-  if (!onboarded && !splashed) {
-    return <Splash onDone={() => setSplashed(true)} />;
   }
 
   if (!onboarded) {

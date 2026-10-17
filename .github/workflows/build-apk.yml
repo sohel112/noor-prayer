@@ -65,8 +65,14 @@ jobs:
             -Pandroid.injected.signing.key.alias=androiddebugkey \
             -Pandroid.injected.signing.key.password=android
 
+      - name: Rename APK
+        run: |
+          VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "1.0.0")
+          cp android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/Deen-v${VERSION}.apk
+          ls -lh android/app/build/outputs/apk/release/
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: deen-standalone-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          path: android/app/build/outputs/apk/release/Deen-v*.apk

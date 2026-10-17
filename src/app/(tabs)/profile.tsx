@@ -18,7 +18,7 @@ import { getSyncMeta, pushAll, pullAll, type SyncMeta } from '../../lib/sync';
 import { getSupabase } from '../../lib/supabase';
 import { FONTS } from '../../lib/theme';
 import { t } from '../../lib/i18n';
-import * as ImagePicker from 'expo-image-picker';
+// ImagePicker loaded lazily to avoid native module crash on screen open
 import { AdBanner } from '../../components/AdBanner';
 
 interface Stats {
@@ -188,6 +188,7 @@ export default function Profile() {
       return;
     }
     try {
+      const ImagePicker = await import('expo-image-picker');
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
         Alert.alert('Permission needed', 'Please allow photo access to set a profile picture.');

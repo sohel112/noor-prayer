@@ -26,26 +26,36 @@ export default function Leaderboard() {
 
   useEffect(() => {
     (async () => {
-      const sb = getSupabase();
-      if (!sb) { setLoading(false); return; }
-      const { data: { user } } = await sb.auth.getUser();
-      setLoggedIn(!!user);
-      if (user) {
-        setMyCode(await getMyReferralCode());
-        setMyCount(await getMyReferralCount());
+      try {
+        const sb = getSupabase();
+        if (!sb) { setLoading(false); return; }
+        const { data: { user } } = await sb.auth.getUser();
+        setLoggedIn(!!user);
+        if (user) {
+          setMyCode(await getMyReferralCode());
+          setMyCount(await getMyReferralCount());
+        }
+        const d = await detectDistrict();
+        setDistrict(d);
+      } catch {
+        // Never crash leaderboard on data load failure
+      } finally {
+        setLoading(false);
       }
-      const d = await detectDistrict();
-      setDistrict(d);
-      setLoading(false);
     })();
   }, []);
 
   useEffect(() => {
     (async () => {
-      setLoading(true);
-      const list = await getLeaderboard(tab === 'district' ? district : null);
-      setEntries(list);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const list = await getLeaderboard(tab === 'district' ? district : null);
+        setEntries(list);
+      } catch {
+        setEntries([]);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [tab, district]);
 

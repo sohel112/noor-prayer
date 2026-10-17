@@ -60,8 +60,10 @@ export async function detectDistrict(): Promise<string | null> {
     if (district) {
       await setJSON(DISTRICT_KEY, district);
       const sb = getSupabase();
-      const { data: { user } } = await sb.auth.getUser();
-      if (user) await sb.from('profiles').update({ district }).eq('id', user.id);
+      if (sb) {
+        const { data: { user } } = await sb.auth.getUser();
+        if (user) await sb.from('profiles').update({ district }).eq('id', user.id);
+      }
     }
     return district ?? cached ?? null;
   } catch {

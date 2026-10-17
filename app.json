@@ -47,12 +47,7 @@
         "expo-notifications",
         {
           "color": "#0B1D13",
-          "icon": "./assets/icon.png",
-          "sounds": [
-            "./assets/audio/azan.ogg",
-            "./assets/audio/azan2.ogg",
-            "./assets/audio/azan-makkah.mp3"
-          ]
+          "icon": "./assets/icon.png"
         }
       ],
       "expo-audio",

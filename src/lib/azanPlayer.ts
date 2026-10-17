@@ -22,7 +22,7 @@ export type AzanId = (typeof AZAN_OPTIONS)[number]['id'];
 const azanModules: Record<AzanId, any> = {
   azan1: require('../../assets/audio/azan.mp3'),
   azan2: require('../../assets/audio/azan2.mp3'),
-  azan3: require('../../assets/audio/azan-makkah.mp3'),
+  azan3: require('../../assets/audio/azan_makkah.mp3'),
 };
 
 async function ensureMode() {

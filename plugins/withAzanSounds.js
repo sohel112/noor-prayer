@@ -31,10 +31,10 @@ module.exports = function withAzanSounds(config) {
         }
       }
       // keep.xml stops resource shrinker deleting raw azan files
-      const valuesDir = path.join(platformRoot, 'app', 'src', 'main', 'res', 'values');
+      // Placed in res/raw/ as per spec - tools:keep works from any res folder
       const keepXml = '<?xml version="1.0" encoding="utf-8"?>\n<resources xmlns:tools="http://schemas.android.com/tools"\n    tools:keep="@raw/azan,@raw/azan2,@raw/azan_makkah" />\n';
-      if (!fs.existsSync(valuesDir)) { fs.mkdirSync(valuesDir, { recursive: true }); }
-      fs.writeFileSync(path.join(valuesDir, 'azan_keep.xml'), keepXml);
+      fs.writeFileSync(path.join(destDir, 'keep.xml'), keepXml);
+      console.log('[withAzanSounds] created res/raw/keep.xml');
       return config;
     },
   ]);

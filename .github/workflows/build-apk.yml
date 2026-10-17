@@ -56,6 +56,8 @@ jobs:
       - name: Copy azan sounds to Android raw resources
         run: |
           mkdir -p android/app/src/main/res/raw
+          # Remove any duplicates first (Android doesn't allow same name with different extensions)
+          rm -f android/app/src/main/res/raw/azan.* android/app/src/main/res/raw/azan2.* android/app/src/main/res/raw/azan_makkah.*
           cp assets/audio/azan.ogg android/app/src/main/res/raw/azan.ogg
           cp assets/audio/azan2.ogg android/app/src/main/res/raw/azan2.ogg
           cp assets/audio/azan-makkah.mp3 android/app/src/main/res/raw/azan_makkah.mp3

@@ -42,7 +42,7 @@ export function getSupabase(): SupabaseClient | null {
         // Persist session on device so login survives restarts.
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: false,
+        detectSessionInUrl: true,
       },
     });
   }

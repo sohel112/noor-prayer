@@ -82,20 +82,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const sb = getSupabase();
     if (!sb) return { error: 'Cloud backup is not set up yet.' };
     try {
-      const { data, error } = await sb.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo, skipBrowserRedirect: true },
+      // Native Google Sign-In (in-app, no browser)
+      const { GoogleSignin } = await import('@react-native-google-signin/google-signin');
+      GoogleSignin.configure({
+        webClientId: '452961690062-m1pp5ekh3ij58m1bftbdrr64nh8iq95e.apps.googleusercontent.com',
+        offlineAccess: false,
       });
-      if (error || !data?.url) return { error: error?.message ?? 'Could not start Google sign-in.' };
-      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-      if (res.type !== 'success' || !res.url) return { error: 'Sign-in was cancelled.' };
-      // The redirect URL carries the session in the fragment; Supabase parses it.
-      if (Platform.OS !== 'web') {
-        const { error: sessErr } = await sb.auth.getSession();
-        if (sessErr) return { error: sessErr.message };
-      }
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken;
+      if (!idToken) return { error: 'Could not get Google ID token.' };
+      const { error } = await sb.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+      });
+      if (error) return { error: error.message };
       return {};
     } catch (e: any) {
+      if (e?.code === 'SIGN_IN_CANCELLED') return { error: 'Sign-in was cancelled.' };
       return { error: e?.message ?? 'Google sign-in failed.' };
     }
   };

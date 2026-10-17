@@ -75,6 +75,7 @@
           }
         }
       ],
+      "@react-native-google-signin/google-signin",
       "./plugins/withAzanSounds.js"
     ],
     "scheme": "noor",

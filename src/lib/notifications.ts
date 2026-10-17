@@ -44,6 +44,7 @@ export async function setupNotificationCategories(): Promise<void> {
       for (const old of [
         'prayer-azan', 'prayer-azan-v1', 'prayer-azan-v2',
         'prayer-azan-s1', 'prayer-azan-s2', 'prayer-azan-s3',
+        'prayer-azan-s1-v2', 'prayer-azan-s2-v2', 'prayer-azan-s3-v1',
       ]) {
         try { await Notifications.deleteNotificationChannelAsync(old); } catch { /* ignore */ }
       }

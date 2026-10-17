@@ -3,6 +3,7 @@
 // Credentials are placeholders until the owner creates a Supabase project (see README).
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
 const PLACEHOLDER_URL = 'https://YOUR_PROJECT.supabase.co';
@@ -40,6 +41,8 @@ export function getSupabase(): SupabaseClient | null {
     client = createClient(url, anonKey, {
       auth: {
         // Persist session on device so login survives restarts.
+        // AsyncStorage is required - default localStorage doesn't exist in React Native.
+        storage: AsyncStorage,
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,

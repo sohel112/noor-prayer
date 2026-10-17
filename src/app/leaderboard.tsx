@@ -8,9 +8,14 @@ import { Screen, TopBar, useTheme, Card } from '../components/ui';
 import { FONTS } from '../lib/theme';
 import { useSettings } from '../lib/settings';
 import { getSupabase } from '../lib/supabase';
-import { getLeaderboard, detectDistrict, getMyReferralCode, getMyReferralCount, shareApp, type LeaderboardEntry } from '../lib/referral';
+import type { LeaderboardEntry } from '../lib/referral';
+// Referral functions loaded lazily to avoid import-time crash
 
 const MEDALS = ['🥇', '🥈', '🥉'];
+
+async function getReferral() {
+  return await import('../lib/referral');
+}
 
 export default function Leaderboard() {
   const th = useTheme();
@@ -31,11 +36,12 @@ export default function Leaderboard() {
         if (!sb) { setLoading(false); return; }
         const { data: { user } } = await sb.auth.getUser();
         setLoggedIn(!!user);
+        const ref = await getReferral();
         if (user) {
-          setMyCode(await getMyReferralCode());
-          setMyCount(await getMyReferralCount());
+          setMyCode(await ref.getMyReferralCode());
+          setMyCount(await ref.getMyReferralCount());
         }
-        const d = await detectDistrict();
+        const d = await ref.detectDistrict();
         setDistrict(d);
       } catch {
         // Never crash leaderboard on data load failure
@@ -49,7 +55,8 @@ export default function Leaderboard() {
     (async () => {
       try {
         setLoading(true);
-        const list = await getLeaderboard(tab === 'district' ? district : null);
+        const ref = await getReferral();
+        const list = await ref.getLeaderboard(tab === 'district' ? district : null);
         setEntries(list);
       } catch {
         setEntries([]);
@@ -60,7 +67,8 @@ export default function Leaderboard() {
   }, [tab, district]);
 
   const onShare = async () => {
-    const result = await shareApp(lang, true);
+    const ref = await getReferral();
+    const result = await ref.shareApp(lang, true);
     if (result === 'login_required') {
       Alert.alert(
         lang === 'hi' ? 'लॉगिन आवश्यक' : lang === 'ur' ? 'لاگ ان ضروری' : 'Login Required',

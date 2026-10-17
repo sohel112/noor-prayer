@@ -2,7 +2,6 @@
 // Handles referral codes, sharing, leaderboard, and district detection.
 
 import { Share } from 'react-native';
-import * as Location from 'expo-location';
 import { getSupabase } from './supabase';
 import { getJSON, setJSON } from './storage';
 

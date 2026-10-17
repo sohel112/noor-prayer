@@ -10,7 +10,6 @@
 //   Source: https://commons.wikimedia.org/wiki/File:Azan.ogg
 
 import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
-import { Asset } from 'expo-asset';
 
 export const AZAN_OPTIONS = [
   { id: 'azan1', name: 'Beautiful Adhan (default)', credit: 'Adam-synagda · CC0' },
@@ -50,16 +49,14 @@ export async function playAzan(azanId: AzanId = 'azan1'): Promise<void> {
     // Rebuild the player if the user changed the azan selection.
     if (!player || currentAzan !== azanId) {
       try { player?.remove(); } catch { /* ignore */ }
-      const asset = Asset.fromModule(azanModules[azanId]);
-      await asset.downloadAsync();
-      const uri = asset.localUri ?? asset.uri;
-      player = createAudioPlayer(uri);
+      // Use require() directly - expo-audio handles the asset
+      player = createAudioPlayer(azanModules[azanId]);
       currentAzan = azanId;
     }
     player.seekTo(0);
     player.play();
-  } catch {
-    // never crash the app over audio
+  } catch (e) {
+    console.log('[AzanPlayer] Error:', e);
   }
 }
 

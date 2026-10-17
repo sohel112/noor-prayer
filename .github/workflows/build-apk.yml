@@ -55,19 +55,6 @@ jobs:
           # Disable resource shrinking to keep azan notification sounds
           echo "android.shrinkResources=false" >> android/gradle.properties
 
-      - name: Copy azan sounds to Android raw resources
-        run: |
-          mkdir -p android/app/src/main/res/raw
-          # Remove any duplicates first (Android doesn't allow same name with different extensions)
-          rm -f android/app/src/main/res/raw/azan.* android/app/src/main/res/raw/azan2.* android/app/src/main/res/raw/azan_makkah.*
-          cp assets/audio/azan.mp3 android/app/src/main/res/raw/azan.mp3
-          cp assets/audio/azan2.mp3 android/app/src/main/res/raw/azan2.mp3
-          cp assets/audio/azan-makkah.mp3 android/app/src/main/res/raw/azan_makkah.mp3
-          # Keep.xml prevents resource shrinker from deleting notification sounds
-          mkdir -p android/app/src/main/res/values
-          printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' '<resources xmlns:tools="http://schemas.android.com/tools"' '    tools:keep="@raw/azan,@raw/azan2,@raw/azan_makkah" />' > android/app/src/main/res/values/azan_keep.xml
-          ls -lh android/app/src/main/res/raw/
-
       - name: Build APK (release, debug-signed standalone)
         run: |
           cd android

@@ -138,14 +138,7 @@ function Inner() {
     );
   }
 
-  if (!onboarded) {
-    return (
-      <>
-        <StatusBar style={settings.theme === 'dark' ? 'light' : 'dark'} />
-        <Onboarding onDone={() => setOnboarded(true)} />
-      </>
-    );
-  }
+  // Onboarding removed - go straight to main app
 
   return (
     <>

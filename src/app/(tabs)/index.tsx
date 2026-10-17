@@ -18,6 +18,9 @@ import { reschedulePrayerNotifications } from '../../lib/notifications';
 import ayahOfDayData from '../../../assets/data/ayahOfDay.json';
 
 import { shareApp } from '../../lib/referral';
+import ReviewPrompt from '../../components/ReviewPrompt';
+import { shouldShowReviewPrompt } from '../../lib/appReview';
+import Constants from 'expo-constants';
 import { getSupabase } from '../../lib/supabase';
 const PRAYER_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
 type PrayerName = (typeof PRAYER_ORDER)[number];
@@ -310,6 +313,25 @@ export default function Home() {
   const th = useTheme();
   const lang = settings.lang;
   const { loc } = useLocation();
+  const [showReviewPrompt, setShowReviewPrompt] = useState(false);
+
+  // In-App Review: show when user hits consistency milestone
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        // Wait a bit so the home screen settles first
+        await new Promise((r) => setTimeout(r, 3000));
+        if (cancelled) return;
+        const version = Constants.expoConfig?.version ?? '1.0.0';
+        const should = await shouldShowReviewPrompt(version);
+        if (should && !cancelled) setShowReviewPrompt(true);
+      } catch {
+        // never break home screen for review prompt
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const today = useMemo(() => new Date(), []);
   const times: PrayerTimes | null = useMemo(() => {
@@ -423,6 +445,10 @@ export default function Home() {
         <FeaturesGrid th={th} />
         <AdBanner />
       </Scroller>
+      <ReviewPrompt
+        visible={showReviewPrompt}
+        onClose={() => setShowReviewPrompt(false)}
+      />
     </Screen>
   );
 }

@@ -46,8 +46,13 @@
       [
         "expo-notifications",
         {
+          "icon": "./assets/icon.png",
           "color": "#0B1D13",
-          "icon": "./assets/icon.png"
+          "sounds": [
+            "./assets/audio/azan.mp3",
+            "./assets/audio/azan2.mp3",
+            "./assets/audio/azan_makkah.mp3"
+          ]
         }
       ],
       "expo-audio",
@@ -70,8 +75,7 @@
         {
           "photosPermission": "Deen uses your photos to let you set a profile picture."
         }
-      ],
-      "./plugins/withAzanSounds.js"
+      ]
     ],
     "scheme": "noor",
     "slug": "noor-prayer",

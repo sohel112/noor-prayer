@@ -53,8 +53,8 @@ export default function Leaderboard() {
     const result = await shareApp(lang, true);
     if (result === 'login_required') {
       Alert.alert(
-        'Login Required',
-        'Please login to earn referrals! Your referral count will only increase after login. 🤲',
+        lang === 'hi' ? 'लॉगिन आवश्यक' : lang === 'ur' ? 'لاگ ان ضروری' : 'Login Required',
+        lang === 'hi' ? 'रेफरल कमाने के लिए लॉगिन करें! आपका रेफरल काउंट लॉगिन के बाद ही बढ़ेगा। 🤲' : lang === 'ur' ? 'ریفرل کمانے کے لیے لاگ ان کریں! آپ کا ریفرل کاؤنٹ لاگ ان کے بعد ہی بڑھے گا۔ 🤲' : 'Please login to earn referrals! Your referral count will only increase after login. 🤲',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Login', onPress: () => router.push('/profile') },

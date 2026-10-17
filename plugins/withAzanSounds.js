@@ -1,7 +1,10 @@
 /**
  * Config plugin: bundles azan audio files as Android notification sounds.
- * Copies assets/audio/azan.ogg -> android/app/src/main/res/raw/azan.ogg
- * so notifications can use `sound: 'azan'` for auto-playing azan.
+ * Copies assets/audio/*.mp3 -> android/app/src/main/res/raw/
+ * and creates keep.xml so the resource shrinker doesn't delete them.
+ *
+ * Runs DURING `npx expo prebuild` (via withDangerousMod), so the files
+ * are generated as part of prebuild and never wiped by it.
  */
 const { withDangerousMod } = require('@expo/config-plugins');
 const fs = require('fs');
@@ -13,16 +16,23 @@ module.exports = function withAzanSounds(config) {
     async (config) => {
       const projectRoot = config.modRequest.projectRoot;
       const platformRoot = config.modRequest.platformProjectRoot;
-      const srcDir = path.join(projectRoot, 'assets', 'audio');
-      const destDir = path.join(platformRoot, 'app', 'src', 'main', 'res', 'raw');
 
-      if (!fs.existsSync(destDir)) {
-        fs.mkdirSync(destDir, { recursive: true });
+      // 1. Raw folder path (where MP3 files go)
+      const rawDir = path.join(platformRoot, 'app', 'src', 'main', 'res', 'raw');
+      if (!fs.existsSync(rawDir)) {
+        fs.mkdirSync(rawDir, { recursive: true });
       }
 
-      for (const [srcFile, destFile] of [['azan.mp3', 'azan.mp3'], ['azan2.mp3', 'azan2.mp3'], ['azan-makkah.mp3', 'azan_makkah.mp3']]) {
+      // 2. Copy MP3 files
+      const srcDir = path.join(projectRoot, 'assets', 'audio');
+      const files = [
+        ['azan.mp3', 'azan.mp3'],
+        ['azan2.mp3', 'azan2.mp3'],
+        ['azan-makkah.mp3', 'azan_makkah.mp3'],
+      ];
+      for (const [srcFile, destFile] of files) {
         const src = path.join(srcDir, srcFile);
-        const dest = path.join(destDir, destFile);
+        const dest = path.join(rawDir, destFile);
         if (fs.existsSync(src)) {
           fs.copyFileSync(src, dest);
           console.log(`[withAzanSounds] copied ${srcFile} to res/raw/${destFile}`);
@@ -30,11 +40,16 @@ module.exports = function withAzanSounds(config) {
           console.warn(`[withAzanSounds] missing: ${src}`);
         }
       }
-      // keep.xml stops resource shrinker deleting raw azan files
-      const valuesDir = path.join(platformRoot, 'app', 'src', 'main', 'res', 'values');
-      const keepXml = '<?xml version="1.0" encoding="utf-8"?>\n<resources xmlns:tools="http://schemas.android.com/tools"\n    tools:keep="@raw/azan,@raw/azan2,@raw/azan_makkah" />\n';
-      if (!fs.existsSync(valuesDir)) { fs.mkdirSync(valuesDir, { recursive: true }); }
-      fs.writeFileSync(path.join(valuesDir, 'azan_keep.xml'), keepXml);
+
+      // 3. keep.xml in res/raw/ so Gradle resource shrinker keeps the sounds
+      const keepXmlPath = path.join(rawDir, 'keep.xml');
+      const keepXmlContent = `<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/azan,@raw/azan2,@raw/azan_makkah" />
+`;
+      fs.writeFileSync(keepXmlPath, keepXmlContent);
+      console.log('[withAzanSounds] created res/raw/keep.xml to prevent shrinking');
+
       return config;
     },
   ]);

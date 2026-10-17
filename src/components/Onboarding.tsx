@@ -12,7 +12,7 @@ import AzanSetupCard from './AzanSetupCard';
 export default function Onboarding({ onDone }: { onDone: () => void }) {
   const { settings, update } = useSettings();
   const th = useTheme();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(1); // Start at Language (skip Welcome)
   const { useGps } = useLocation();
   const [detected, setDetected] = useState<DetectedMethod | null>(null);
   const [showManual, setShowManual] = useState(false);
@@ -22,8 +22,13 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
     onDone();
   };
 
+  // Skip Prayer Method step (3) - go from Location (2) directly to Azan setup (4)
+  const goNext = () => {
+    setStep(s => s === 2 ? 4 : s + 1);
+  };
+
   const nextBtn = (label = 'Continue →') => (
-    <TouchableOpacity style={[styles.btn, { backgroundColor: th.accent }]} onPress={() => setStep(s => s + 1)}>
+    <TouchableOpacity style={[styles.btn, { backgroundColor: th.accent }]} onPress={goNext}>
       <Text style={[styles.btnText, { color: th.onAccent }]}>{label}</Text>
     </TouchableOpacity>
   );
@@ -38,7 +43,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
     } else {
       setDetected(null); // permission denied → manual method pick
     }
-    setStep(s => s + 1);
+    setStep(4); // Skip prayer method, go to Azan setup
   };
 
   const methodList = (selectedId: string) => (
@@ -91,7 +96,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
             >
               <Text style={[styles.btnText, { color: th.onAccent }]}>Use my location</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={{ marginTop: 12 }} onPress={() => { setDetected(null); setStep(s => s + 1); }}>
+            <TouchableOpacity style={{ marginTop: 12 }} onPress={() => { setDetected(null); setStep(4); }}>
               <Text style={{ color: th.sub, textAlign: 'center' }}>Skip — I'll set it later</Text>
             </TouchableOpacity>
           </Card>

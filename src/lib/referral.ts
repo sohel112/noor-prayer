@@ -48,26 +48,12 @@ export async function detectDistrict(): Promise<string | null> {
     const manual = await getJSON<string>(DISTRICT_MANUAL_KEY);
     if (manual) return manual;
     const cached = await getJSON<string>(DISTRICT_KEY);
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return cached ?? null;
-    const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
-    const { latitude, longitude } = loc.coords;
-    const res = await fetch(
-      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-    );
-    const json = await res.json();
-    const district = json.city || json.locality || json.principalSubdivision || null;
-    if (district) {
-      await setJSON(DISTRICT_KEY, district);
-      const sb = getSupabase();
-      if (sb) {
-        const { data: { user } } = await sb.auth.getUser();
-        if (user) await sb.from('profiles').update({ district }).eq('id', user.id);
-      }
-    }
-    return district ?? cached ?? null;
+    // Return cached immediately to avoid Location crashes on Settings/Leaderboard open.
+    // Location-based detection only runs when explicitly requested.
+    if (cached) return cached;
+    return null;
   } catch {
-    return (await getJSON<string>(DISTRICT_KEY)) ?? null;
+    return null;
   }
 }
 

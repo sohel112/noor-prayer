@@ -50,7 +50,7 @@ function DuaRow({ dua, expanded, onToggle, isFav, onFav }: {
 }) {
   const th = useTheme();
   const { settings } = useSettings();
-  const translation = settings.translation === 'ur' ? dua.ur : dua.en;
+  const translation = settings.translation === 'ur' ? dua.ur : settings.translation === 'hi' ? dua.hi : dua.en;
   return (
     <View style={[styles.duaWrap, { backgroundColor: th.card, borderColor: th.border }]}>
       <TouchableOpacity onPress={onToggle} activeOpacity={0.75} style={styles.duaHead}>
@@ -217,7 +217,7 @@ export default function Duas() {
     [favorites],
   );
   const featuredExpanded = expandedId === featured.id;
-  const translation = settings.translation === 'ur' ? featured.ur : featured.en;
+  const translation = settings.translation === 'ur' ? featured.ur : settings.translation === 'hi' ? featured.hi : featured.en;
 
   return (
     <Screen edges={['top']}>
@@ -231,12 +231,12 @@ export default function Duas() {
             <View style={[styles.featured, { backgroundColor: '#0B3D2E', borderColor: '#D4AF7C' }]}>
               <View style={styles.featuredTopRow}>
                 <View style={styles.dayPill}>
-                  <Text style={styles.dayPillText}>✨ DUA OF THE DAY</Text>
+                  <Text style={styles.dayPillText}>✨ {lang === 'hi' ? 'आज की दुआ' : lang === 'ur' ? 'آج کی دعا' : 'DUA OF THE DAY'}</Text>
                 </View>
                 <Text style={{ fontSize: 28 }}>🤲</Text>
               </View>
-              <Text style={[styles.featuredTitle, { color: '#FFFFFF' }]}>Morning Dua</Text>
-              <Text style={styles.featuredSubtitle}>For Blessings &amp; Guidance</Text>
+              <Text style={[styles.featuredTitle, { color: '#FFFFFF' }]}>{lang === 'hi' ? 'सुबह की दुआ' : lang === 'ur' ? 'صبح کی دعا' : 'Morning Dua'}</Text>
+              <Text style={styles.featuredSubtitle}>{lang === 'hi' ? 'बरकत और हिदायत के लिए' : lang === 'ur' ? 'برکت اور ہدایت کے لیے' : 'For Blessings & Guidance'}</Text>
               <View style={styles.featuredDivider} />
               <Arabic size={18} style={styles.featuredArabic}>{featured.ar}</Arabic>
               <TouchableOpacity
@@ -245,7 +245,7 @@ export default function Duas() {
                 style={styles.readBtn}
               >
                 <Text style={{ color: '#0B3D2E', fontFamily: FONTS.bodySemi, fontSize: 15 }}>
-                  {featuredExpanded ? 'Hide ↑' : 'Read Full Dua →'}
+                  {featuredExpanded ? (lang === 'hi' ? 'छिपाएं ↑' : 'Hide ↑') : (lang === 'hi' ? 'पूरी दुआ पढ़ें →' : 'Read Full Dua →')}
                 </Text>
               </TouchableOpacity>
               {featuredExpanded ? (

@@ -62,7 +62,7 @@ export default function Duas() {
               </TouchableOpacity>
             </View>
             <Arabic>{d.ar}</Arabic>
-            <Sub style={{ marginTop: 8 }}>{lang === 'ur' ? d.ur : d.en}</Sub>
+            <Sub style={{ marginTop: 8 }}>{lang === 'ur' ? d.ur : lang === 'hi' ? d.hi : d.en}</Sub>
           </Card>
         ))}
 

@@ -13,7 +13,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as StoreReview from 'expo-store-review';
+import { Linking, Platform } from 'react-native';
 import { getJSON, setJSON } from './storage';
 
 // Uses typed storage key 'reviewPrompt' (see storage.ts)
@@ -153,14 +153,23 @@ export async function dismissReviewForever(): Promise<void> {
 }
 
 /**
- * Open the native Google Play In-App Review dialog.
- * Falls back gracefully on iOS / unsupported devices.
+ * Open the Play Store listing so the user can leave a review.
+ * (Uses store deep-link; the native in-app dialog needs a native module.)
  */
 export async function openNativeReview(): Promise<void> {
   try {
-    const available = await StoreReview.isAvailableAsync();
-    if (available) {
-      await StoreReview.requestReview();
+    const packageName = 'com.noor.prayer';
+    const url =
+      Platform.OS === 'android'
+        ? `market://details?id=${packageName}`
+        : `https://play.google.com/store/apps/details?id=${packageName}`;
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      await Linking.openURL(
+        `https://play.google.com/store/apps/details?id=${packageName}`
+      );
     }
   } catch {
     // Silently fail — review is optional, never crash the app

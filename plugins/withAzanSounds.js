@@ -28,7 +28,7 @@ module.exports = function withAzanSounds(config) {
       const files = [
         ['azan.mp3', 'azan.mp3'],
         ['azan2.mp3', 'azan2.mp3'],
-        ['azan-makkah.mp3', 'azan_makkah.mp3'],
+        ['azan_makkah.mp3', 'azan_makkah.mp3'],
       ];
       for (const [srcFile, destFile] of files) {
         const src = path.join(srcDir, srcFile);

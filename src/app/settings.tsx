@@ -6,11 +6,24 @@ import { useSettings, Lang, ThemeMode, DEFAULT_SETTINGS } from '../lib/settings'
 import { t, LANGS } from '../lib/i18n';
 import { PRAYER_METHODS } from '../lib/prayerTimes';
 import { setJSON, getJSON } from '../lib/storage';
-import { playAzan, AZAN_OPTIONS } from '../lib/azanPlayer';
+// Lazy: expo-audio native module
+import { AZAN_OPTIONS } from '../lib/azanPlayer';
 import { requestBatteryExemption } from '../lib/notifications';
 import { useAuth } from '../lib/auth';
 import { getSyncMeta, syncAll, type SyncMeta } from '../lib/sync';
-import { detectDistrict, setDistrictManual } from '../lib/referral';
+// Referral loaded lazily to avoid import-time crash
+
+async function getReferral() {
+  return await import('../lib/referral');
+}
+
+async function getAzanPlayer() {
+  return await import('../lib/azanPlayer');
+}
+
+async function getNotifications() {
+  return await import('../lib/notifications');
+}
 
 function BackupSyncCard() {
   const { settings } = useSettings();
@@ -102,13 +115,13 @@ export default function Settings() {
   const [district, setDistrict] = useState<string>('');
   const [editingDistrict, setEditingDistrict] = useState(false);
   useEffect(() => {
-    getJSON<string>('userDistrictManual').then(d => { if (d) setDistrict(d); });
-    detectDistrict().then(d => { if (d) setDistrict(prev => prev || d); });
+    getJSON<string>('userDistrictManual' as any, '').then(d => { if (d) setDistrict(d); });
+    getReferral().then(r => r.detectDistrict().then(d => { if (d) setDistrict(prev => prev || d); }));
   }, []);
   const saveDistrict = async () => {
     const d = district.trim();
     if (!d) { Alert.alert('District', 'Please enter your district.'); return; }
-    await setDistrictManual(d);
+    (await getReferral()).setDistrictManual(d);
     setEditingDistrict(false);
     Alert.alert('District', `District set to ${d} 📍`);
   };
@@ -282,7 +295,7 @@ export default function Settings() {
           </Sub>
           <TouchableOpacity
             style={[styles.testBtn, { backgroundColor: th.accentSoft, borderColor: th.accent }]}
-            onPress={() => playAzan(settings.azanSound === 'azan2' ? 'azan2' : 'azan1')}
+            onPress={async () => (await getAzanPlayer()).playAzan(settings.azanSound === 'azan2' ? 'azan2' : 'azan1')}
           >
             <Text style={{ color: th.accent, fontWeight: '700' }}>🔊 Test azan sound</Text>
           </TouchableOpacity>

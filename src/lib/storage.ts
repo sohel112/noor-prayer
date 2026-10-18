@@ -31,6 +31,8 @@ const KEYS = {
   hifzRev: 'noor.hifzrev.v1', // { 's': 'YYYY-MM-DD' } last revision date per surah
   updateCheck: 'noor.updatecheck.v1', // timestamp of last update check
   reviewPrompt: 'noor.reviewprompt.v1', // { promptedVersion, dismissedForever }
+  userDistrict: 'noor.userdistrict.v1',
+  userDistrictManual: 'noor.userdistrictmanual.v1',
 } as const;
 
 export type StorageKey = keyof typeof KEYS;

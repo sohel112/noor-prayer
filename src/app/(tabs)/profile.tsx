@@ -19,8 +19,7 @@ import { getSupabase } from '../../lib/supabase';
 import { FONTS } from '../../lib/theme';
 import { t } from '../../lib/i18n';
 // ImagePicker loaded lazily to avoid native module crash on screen open
-// AdBanner loaded lazily to avoid native module crash
-const AdBanner = React.lazy(() => import('../../components/AdBanner').then(m => ({ default: m.AdBanner })));
+import { AdBanner } from '../../components/AdBanner';
 
 interface Stats {
   streak: number;
@@ -389,9 +388,7 @@ export default function Profile() {
         </Card>
 
         <View style={{ height: 24 }} />
-        <React.Suspense fallback={null}>
-          <AdBanner />
-        </React.Suspense>
+        {/* <AdBanner /> - disabled: native crash */}
       </Scroller>
     </Screen>
   );

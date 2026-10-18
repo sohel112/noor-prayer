@@ -1,13 +1,39 @@
 // Local prayer notifications — scheduled fully on-device.
 // Respects per-prayer toggles and quiet hours. No server involved.
 
-import * as Notifications from 'expo-notifications';
+// Safe import: expo-notifications may crash on some devices
+let Notifications: typeof import('expo-notifications') | null = null;
+try {
+  Notifications = require('expo-notifications');
+} catch {
+  console.warn('[notifications] expo-notifications not available');
+}
+
+// Guard: if native module failed to load, make all calls safe no-ops
+if (!Notifications) {
+  const dummy = new Proxy(() => {}, {
+    get: (t, p) => {
+      if (p === 'AndroidImportance') return { MAX: 4, HIGH: 3, DEFAULT: 2, LOW: 1, MIN: 0 };
+      if (p === 'AndroidAudioUsage') return { ALARM: 4, NOTIFICATION: 5 };
+      if (p === 'AndroidAudioContentType') return { SONIFICATION: 1 };
+      if (p === 'AndroidNotificationVisibility') return { PUBLIC: 1 };
+      return dummy;
+    },
+    apply: () => Promise.resolve({ status: 'denied' }),
+  });
+  Notifications = dummy as any;
+}
+// After guard, Notifications is always truthy - tell TS
+const NT = Notifications as NonNullable<typeof Notifications>;
+// Type assertion: after guard, Notifications is always defined
+const N = Notifications as any;
 import { Platform } from 'react-native';
 import { PrayerTimes } from './prayerTimes';
 import { Settings } from './settings';
 import { DAILY_DUAS } from '../data/dailyDuas';
 
-Notifications.setNotificationHandler({
+if (Notifications && typeof NT.setNotificationHandler === 'function')
+NT.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
@@ -26,7 +52,7 @@ const PRAYER_KEYS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
 /** Notification category with a "Play azan" action button. */
 export async function setupNotificationCategories(): Promise<void> {
   try {
-    await Notifications.setNotificationCategoryAsync('prayer-azan', [
+    await NT.setNotificationCategoryAsync('prayer-azan', [
       { identifier: 'PLAY_AZAN', buttonTitle: '🔊 Play azan', options: { opensAppToForeground: true } },
     ]);
   } catch { /* categories are best-effort */ }
@@ -48,35 +74,35 @@ export async function setupNotificationCategories(): Promise<void> {
         'prayer-azan-s1-v3', 'prayer-azan-s2-v3', 'prayer-azan-s3-v2',
         'prayer-azan-s1-v4', 'prayer-azan-s2-v4', 'prayer-azan-s3-v3',
       ]) {
-        try { await Notifications.deleteNotificationChannelAsync(old); } catch { /* ignore */ }
+        try { await NT.deleteNotificationChannelAsync(old); } catch { /* ignore */ }
       }
       // Channel for azan1 (default) — v2 ID ensures fresh creation.
-      await Notifications.setNotificationChannelAsync('prayer-azan-s1-v6', {
+      await NT.setNotificationChannelAsync('prayer-azan-s1-v6', {
         name: 'Prayer Azan',
-        importance: Notifications.AndroidImportance.MAX,
+        importance: NT.AndroidImportance.MAX,
         sound: 'azan', // res/raw/azan.ogg (no extension)
         vibrationPattern: [0, 500, 200, 500],
         enableVibrate: true,
         showBadge: false,
         audioAttributes: {
-          usage: Notifications.AndroidAudioUsage.ALARM,
-          contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+          usage: NT.AndroidAudioUsage.ALARM,
+          contentType: NT.AndroidAudioContentType.SONIFICATION,
         },
       });
       // Channel for azan2 — v2 ID ensures fresh creation.
-      await Notifications.setNotificationChannelAsync('prayer-azan-s2-v6', {
+      await NT.setNotificationChannelAsync('prayer-azan-s2-v6', {
         name: 'Prayer Azan (Alt)',
-        importance: Notifications.AndroidImportance.MAX,
+        importance: NT.AndroidImportance.MAX,
         sound: 'azan2', // res/raw/azan2.ogg (no extension)
         vibrationPattern: [0, 500, 200, 500],
         enableVibrate: true,
         showBadge: false,
         audioAttributes: {
-          usage: Notifications.AndroidAudioUsage.ALARM,
-          contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+          usage: NT.AndroidAudioUsage.ALARM,
+          contentType: NT.AndroidAudioContentType.SONIFICATION,
         },
       });
-      await Notifications.setNotificationChannelAsync('prayer-azan-s3-v5', { name: 'Prayer Azan (Makkah)', importance: Notifications.AndroidImportance.MAX, sound: 'azan_makkah', vibrationPattern: [0, 1000, 500, 1000], lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC }); console.log('[azan] notification channels created (s1, s2)'); // Channel for azan3 (Makkah) — v1 ID.
+      await NT.setNotificationChannelAsync('prayer-azan-s3-v5', { name: 'Prayer Azan (Makkah)', importance: NT.AndroidImportance.MAX, sound: 'azan_makkah', vibrationPattern: [0, 1000, 500, 1000], lockscreenVisibility: NT.AndroidNotificationVisibility.PUBLIC }); console.log('[azan] notification channels created (s1, s2)'); // Channel for azan3 (Makkah) — v1 ID.
     } catch (e) {
       console.warn('[azan] channel setup failed:', e);
     }
@@ -99,7 +125,7 @@ export function getAzanChannelId(azanSound: string): string {
 export async function ensureNotificationPermissions(): Promise<boolean> {
   try {
     await setupNotificationCategories();
-    const { status } = await Notifications.requestPermissionsAsync({
+    const { status } = await NT.requestPermissionsAsync({
       ios: { allowAlert: true, allowSound: true, allowBadge: false },
     });
     return status === 'granted';
@@ -114,7 +140,7 @@ export async function ensureNotificationPermissions(): Promise<boolean> {
 /** Current permission status without prompting. */
 export async function getNotificationPermissionStatus(): Promise<string> {
   try {
-    const { status } = await Notifications.getPermissionsAsync();
+    const { status } = await NT.getPermissionsAsync();
     return status;
   } catch {
     return 'undetermined';
@@ -196,10 +222,10 @@ export async function reschedulePrayerNotifications(
   settings: Settings,
 ): Promise<void> {
   try {
-    const { status } = await Notifications.getPermissionsAsync();
+    const { status } = await NT.getPermissionsAsync();
     if (status !== 'granted') return;
     await setupNotificationCategories();
-    await Notifications.cancelAllScheduledNotificationsAsync();
+    await NT.cancelAllScheduledNotificationsAsync();
 
     const days: { times: PrayerTimes; date: Date }[] = [
       { times: today, date: new Date() },
@@ -216,7 +242,7 @@ export async function reschedulePrayerNotifications(
         // Fajr force-wake: loud alarm even on silent — data flag triggers the
         // full-screen alarm UI when the notification is tapped / app opened.
         const forceWake = key === 'fajr' && !!settings.fajrForceWake;
-        await Notifications.scheduleNotificationAsync({
+        await NT.scheduleNotificationAsync({
           content: {
             title: forceWake ? `⏰ FAJR — WAKE UP` : `🕌 ${PRAYER_LABELS[key]} — time for prayer`,
             body: forceWake
@@ -232,10 +258,10 @@ export async function reschedulePrayerNotifications(
             categoryIdentifier: 'prayer-azan',
             // Payload lets the app auto-play azan when the notification is tapped.
             data: { kind: 'prayer-azan', prayer: key, playAzan: !silent || forceWake, forceWake },
-            priority: Notifications.AndroidNotificationPriority.MAX,
+            priority: NT.AndroidNotificationPriority.MAX,
           },
           trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            type: NT.SchedulableTriggerInputTypes.DATE,
             date: at,
             // Android: channelId MUST be on the trigger (per Expo SDK 57 docs).
             // The channel's baked-in sound is what actually plays.
@@ -250,13 +276,13 @@ export async function reschedulePrayerNotifications(
         if (preMins > 0) {
           const remindAt = new Date(at.getTime() - preMins * 60000);
           if (remindAt.getTime() > Date.now() + 60000) {
-            await Notifications.scheduleNotificationAsync({
+            await NT.scheduleNotificationAsync({
               content: {
                 title: `⏳ ${PRAYER_LABELS[key]} in ${preMins} minutes`,
                 body: 'Get ready for prayer. Make wudu.',
                 data: { kind: 'prayer-reminder', prayer: key },
               },
-              trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: remindAt },
+              trigger: { type: NT.SchedulableTriggerInputTypes.DATE, date: remindAt },
             });
           }
         }
@@ -264,13 +290,13 @@ export async function reschedulePrayerNotifications(
         if (settings.notifications['reminder15'] && preMins === 0) {
           const remindAt = new Date(at.getTime() - 15 * 60000);
           if (remindAt.getTime() > Date.now() + 60000) {
-            await Notifications.scheduleNotificationAsync({
+            await NT.scheduleNotificationAsync({
               content: {
                 title: `⏳ ${PRAYER_LABELS[key]} in 15 minutes`,
                 body: 'Get ready for prayer.',
                 data: { kind: 'prayer-reminder', prayer: key },
               },
-              trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: remindAt },
+              trigger: { type: NT.SchedulableTriggerInputTypes.DATE, date: remindAt },
             });
           }
         }
@@ -289,20 +315,20 @@ export async function reschedulePrayerNotifications(
  */
 export async function scheduleDuaOfDay(): Promise<void> {
   try {
-    const { status } = await Notifications.getPermissionsAsync();
+    const { status } = await NT.getPermissionsAsync();
     if (status !== 'granted') return;
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 0);
     const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000);
     const dua = DAILY_DUAS[dayOfYear % DAILY_DUAS.length];
-    await Notifications.scheduleNotificationAsync({
+    await NT.scheduleNotificationAsync({
       content: {
         title: '🤲 Dua of the Day',
         body: `${dua.en} (${dua.ref})`,
         data: { kind: 'dua-of-day', ar: dua.ar, ref: dua.ref },
       },
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        type: NT.SchedulableTriggerInputTypes.DAILY,
         hour: 8,
         minute: 0,
       },
@@ -323,15 +349,15 @@ export async function presentCountdownNotification(
   minutesLeft: number,
 ): Promise<void> {
   try {
-    const { status } = await Notifications.getPermissionsAsync();
+    const { status } = await NT.getPermissionsAsync();
     if (status !== 'granted') return;
     // Remove the previous countdown so the tray never fills up.
     try {
-      await Notifications.dismissNotificationAsync('noor-countdown');
+      await NT.dismissNotificationAsync('noor-countdown');
     } catch {
       // nothing to dismiss
     }
-    await Notifications.scheduleNotificationAsync({
+    await NT.scheduleNotificationAsync({
       content: {
         title: `⏳ ${prayerName} in ${minutesLeft} min`,
         body: 'Deen — prayer countdown',

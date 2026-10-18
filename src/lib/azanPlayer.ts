@@ -9,7 +9,17 @@
 //   (freely licensed). Attribution: Adhan by Andrewler, Wikimedia Commons.
 //   Source: https://commons.wikimedia.org/wiki/File:Azan.ogg
 
-import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
+// Safe import: expo-audio may crash on some devices
+let createAudioPlayer: any = null;
+let setAudioModeAsync: any = null;
+type AudioPlayer = any;
+try {
+  const mod = require('expo-audio');
+  createAudioPlayer = mod.createAudioPlayer;
+  setAudioModeAsync = mod.setAudioModeAsync;
+} catch {
+  console.warn('[azanPlayer] expo-audio not available');
+}
 
 export const AZAN_OPTIONS = [
   { id: 'azan1', name: 'Beautiful Adhan (default)', credit: 'Adam-synagda · CC0' },

@@ -11,7 +11,8 @@ import { t } from '../lib/i18n';
 import { useLocation } from '../lib/location';
 import { calculatePrayerTimes, formatTime, type PrayerTimes } from '../lib/prayerTimes';
 import { FONTS } from '../lib/theme';
-import { AdBanner } from '../components/AdBanner';
+// AdBanner loaded lazily to avoid native module crash
+const AdBanner = React.lazy(() => import('../components/AdBanner').then(m => ({ default: m.AdBanner })));
 
 const PRAYER_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
 type PrayerName = (typeof PRAYER_ORDER)[number];
@@ -351,7 +352,9 @@ export default function PrayerTracker() {
           onPress={() => router.push('/prayer-report')}
           icon="📊"
         />
-        <AdBanner />
+        <React.Suspense fallback={null}>
+          <AdBanner />
+        </React.Suspense>
       </Scroller>
     </Screen>
   );

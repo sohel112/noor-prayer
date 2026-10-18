@@ -2,7 +2,13 @@
 // Nothing is ever uploaded anywhere.
 
 import { useEffect, useState } from 'react';
-import * as Location from 'expo-location';
+// Safe import: expo-location may crash on some devices
+let Location: typeof import('expo-location') | null = null;
+try {
+  Location = require('expo-location');
+} catch {
+  console.warn('[location] expo-location not available');
+}
 import { getJSON, setJSON } from './storage';
 
 export interface SavedLocation {
@@ -31,7 +37,8 @@ export function useLocation() {
   };
 
   const useGps = async (): Promise<SavedLocation | null> => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (!Location) return null;
+  const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') return null;
     const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
     const [geo] = await Location.reverseGeocodeAsync({

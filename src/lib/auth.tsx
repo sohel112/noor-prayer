@@ -3,13 +3,24 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
+// Safe import: may crash on some devices
+let WebBrowser: typeof import('expo-web-browser') | null = null;
+try {
+  WebBrowser = require('expo-web-browser');
+} catch {
+  console.warn('[auth] expo-web-browser not available');
+}
+let Linking: typeof import('expo-linking') | null = null;
+try {
+  Linking = require('expo-linking');
+} catch {
+  console.warn('[auth] expo-linking not available');
+}
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Session, User } from '@supabase/supabase-js';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 
-WebBrowser.maybeCompleteAuthSession();
+if (WebBrowser) WebBrowser.maybeCompleteAuthSession();
 
 interface AuthResult {
   error?: string;
@@ -42,7 +53,7 @@ const Ctx = createContext<AuthState>({
 
 export const useAuth = () => useContext(Ctx);
 
-const redirectTo = Linking.createURL('auth/callback');
+const redirectTo = Linking ? Linking.createURL('auth/callback') : 'noor://auth/callback';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
@@ -88,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: { redirectTo, skipBrowserRedirect: true },
       });
       if (error || !data?.url) return { error: error?.message ?? 'Could not start Google sign-in.' };
+      if (!WebBrowser) return { error: 'Browser not available.' };
       const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
       if (res.type !== 'success' || !res.url) return { error: 'Sign-in was cancelled.' };
       // The redirect URL contains session tokens in the fragment (#access_token=...).

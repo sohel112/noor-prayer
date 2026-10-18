@@ -9,6 +9,7 @@ import { useSettings } from '../../lib/settings';
 import { t } from '../../lib/i18n';
 import { DUAS, DUA_CATEGORIES, type Dua } from '../../data/duas';
 import { FONTS } from '../../lib/theme';
+import { AdBanner } from '../../components/AdBanner';
 
 const TAB_DAILY = 'Daily Duas';
 const TAB_CATEGORY = 'By Category';
@@ -335,6 +336,7 @@ export default function Duas() {
             </Card>
           )
         ) : null}
+        <AdBanner />
       </Scroller>
     </Screen>
   );

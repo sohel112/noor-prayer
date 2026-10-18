@@ -40,6 +40,12 @@ function Inner() {
   useEffect(() => {
     // Analytics: track app open for DAU (privacy-first, opt-out in Settings).
     trackAppOpen();
+    // Ads: preload App Open ad, show once when loaded (AdMob only).
+    import('../lib/adAppOpen').then(m => {
+      m.preloadAppOpenAd();
+      // Give the ad a moment to load, then show once per session.
+      setTimeout(() => m.showAppOpenAdOnce(), 4000);
+    }).catch(() => {});
     // Home-screen widget: push a fresh snapshot on every app start.
     import('../lib/widgetSync').then(m => m.syncPrayerWidget(true)).catch(() => {});
     // CRITICAL: Create notification channel with azan sound on EVERY app start.

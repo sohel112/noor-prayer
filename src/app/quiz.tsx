@@ -5,6 +5,8 @@ import { Screen, Scroller, Card, Title, Sub, useTheme, PrimaryButton } from '../
 import { QUIZ_QUESTIONS, type QuizQuestion } from '../data/quizQuestions';
 import { FONTS } from '../lib/theme';
 import { AdBanner } from '../components/AdBanner';
+import { preloadInterstitial, showInterstitial } from '../lib/adInterstitial';
+import { preloadSimpleRewardedAd } from '../lib/adRewardedSimple';
 
 const BEST_KEY = 'noor.quizbest.v1';
 const SEEN_KEY = 'noor.quizseen.v1';
@@ -45,6 +47,9 @@ export default function Quiz() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // Preload ads early so they're ready at natural break points.
+    preloadInterstitial();
+    preloadSimpleRewardedAd();
     AsyncStorage.getItem(BEST_KEY).then(v => {
       const n = parseInt(v ?? '0', 10);
       if (Number.isFinite(n)) setBest(n);
@@ -148,6 +153,9 @@ export default function Quiz() {
     if (idx + 1 >= questions.length) {
       const final = score;
       setPhase('done');
+      // Natural break point: show interstitial after quiz completion
+      // (90s gap enforced inside; never during the quiz itself).
+      setTimeout(() => showInterstitial(), 800);
       if (final > best) {
         setBest(final);
         AsyncStorage.setItem(BEST_KEY, String(final)).catch(() => {});

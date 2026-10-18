@@ -5,6 +5,7 @@ import { useSettings } from '../lib/settings';
 import { t } from '../lib/i18n';
 import { getJSON, setJSON } from '../lib/storage';
 import { AFTER_PRAYER_DHIKR } from '../data/adhkar';
+import { AdBanner } from '../components/AdBanner';
 
 const PRESETS = [
   { ar: 'سُبْحَانَ اللَّهِ', en: 'SubhanAllah', target: 33 },
@@ -99,6 +100,7 @@ export default function Tasbih() {
             </View>
           ))}
         </Card>
+        <AdBanner />
       </Scroller>
     </Screen>
   );

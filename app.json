@@ -65,7 +65,13 @@
           "photosPermission": "Deen uses your photos to let you set a profile picture."
         }
       ],
-      "./plugins/withAzanKeep.js"
+      "./plugins/withAzanKeep.js",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-6215554830981244~9804683225"
+        }
+      ]
     ],
     "scheme": "noor",
     "slug": "noor-prayer",

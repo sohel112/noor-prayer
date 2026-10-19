@@ -2,92 +2,47 @@
   "expo": {
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0B1D13",
-        "backgroundImage": "./assets/android-icon-background.png",
+        "backgroundColor": "#1B3A6B",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.noor.prayer",
-      "softwareKeyboardLayoutMode": "resize",
-      "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED",
-        "SCHEDULE_EXACT_ALARM",
-        "USE_EXACT_ALARM",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
-      ],
-      "predictiveBackGestureEnabled": false
+      "package": "com.ilmworks.neetmcq"
+    },
+    "extra": {
+      "supabaseAnonKey": "sb_publishable_u-2_q238CPH6Z1LR_1Z1Gg_6751WY_I",
+      "supabaseUrl": "https://vyrivhtxvdxfqliegpfr.supabase.co"
     },
     "icon": "./assets/icon.png",
     "ios": {
-      "bundleIdentifier": "com.noor.prayer",
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Deen uses your location only on this phone to calculate prayer times and Qibla direction. It never leaves your device."
-      },
+      "bundleIdentifier": "com.ilmworks.neetmcq",
       "supportsTablet": true
     },
-    "name": "Deen: Prayer & Quran",
+    "name": "NEET MCQ: PYQ & Mock Test",
+    "description": "NEET MCQ Practice App \u2014 5000+ Previous Year Questions with Solutions, FREE Forever! Crack NEET UG with chapter-wise PYQs (2000-2025), full mock tests, AI-verified answers, weak topic booster, Hindi + English, 100% offline. No login. No subscription.",
     "orientation": "portrait",
-    "plugins": [
-      "expo-router",
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Deen uses your location only on this phone to calculate prayer times and Qibla direction."
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/icon.png",
-          "color": "#0B1D13",
-          "sounds": [
-            "./assets/audio/azan.mp3",
-            "./assets/audio/azan2.mp3",
-            "./assets/audio/azan_makkah.mp3"
-          ]
-        }
-      ],
-      "expo-audio",
-      "expo-asset",
-      "expo-web-browser",
-      "expo-font",
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "Deen uses your photos to let you set a profile picture."
-        }
-      ],
-      "./plugins/withAzanKeep.js",
-      [
-        "react-native-google-mobile-ads",
-        {
-          "androidAppId": "ca-app-pub-6215554830981244~9804683225"
-        }
-      ]
-    ],
-    "scheme": "noor",
-    "slug": "noor-prayer",
+    "slug": "neet-mcq-prep",
     "userInterfaceStyle": "automatic",
-    "version": "1.0.5",
+    "version": "1.0.0",
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "extra": {
-      "router": {},
-      "supabaseUrl": "https://vyrivhtxvdxfqliegpfr.supabase.co",
-      "supabaseAnonKey": "sb_publishable_u-2_q238CPH6Z1LR_1Z1Gg_6751WY_I",
-      "eas": {
-        "projectId": "73dd85f5-3417-48f6-9374-686ccb7ba1af"
-      }
-    },
-    "owner": "sohel113"
+    "plugins": [
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#1B3A6B",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713"
+        }
+      ]
+    ]
   }
 }

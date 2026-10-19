@@ -29,20 +29,27 @@ const TEST_BANNER = 'ca-app-pub-3940256099942544/6300978111';
 const TEST_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
 const TEST_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
 
-/** Master switch — TRUE with Google test IDs (safe, no crash, test ads show). */
+// REAL IDs from AdMob dashboard (user provided 2026-10-19)
+const REAL_APP_ID = 'ca-app-pub-6215554830981244~4978189962';
+const REAL_BANNER = 'ca-app-pub-6215554830981244/7969069405';
+const REAL_INTERSTITIAL = 'ca-app-pub-6215554830981244/2081573043';
+const REAL_REWARDED = 'ca-app-pub-6215554830981244/4384127743';
+const REAL_REWARDED_INTERSTITIAL = 'ca-app-pub-6215554830981244/4791321856';
+
+/** Master switch — TRUE with all REAL AdMob IDs. */
 export const ADMOB_ENABLED = true;
 
 export const ADMOB = {
-  /** AdMob App ID — Google test ID until real account approved. */
-  androidAppId: TEST_APP_ID,
-  /** Banner ad unit — Google test ID. */
-  bannerAdUnitId: TEST_BANNER,
-  /** Interstitial ad unit — Google test ID. */
-  interstitialAdUnitId: TEST_INTERSTITIAL,
-  /** Rewarded ad unit — Google test ID. */
-  rewardedAdUnitId: TEST_REWARDED,
-  /** Rewarded interstitial ad unit — Google test rewarded ID. */
-  rewardedInterstitialAdUnitId: TEST_REWARDED,
+  /** AdMob App ID — REAL (NEET MCQ Prep). */
+  androidAppId: REAL_APP_ID,
+  /** Banner ad unit — REAL. */
+  bannerAdUnitId: REAL_BANNER,
+  /** Interstitial ad unit — REAL. */
+  interstitialAdUnitId: REAL_INTERSTITIAL,
+  /** Rewarded ad unit — REAL. */
+  rewardedAdUnitId: REAL_REWARDED,
+  /** Rewarded interstitial ad unit — REAL. */
+  rewardedInterstitialAdUnitId: REAL_REWARDED_INTERSTITIAL,
 };
 
 function isRealId(id: string): boolean {
